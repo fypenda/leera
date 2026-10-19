@@ -4,21 +4,31 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'ai_settings.dart';
+import '../auth/quota.dart';
+import '../auth/session.dart';
+
+/// The backend's address, chosen when the app is built:
+/// `flutter run --dart-define=LEERA_API_URL=https://api.example.com`.
+const backendUrl = String.fromEnvironment(
+  'LEERA_API_URL',
+  defaultValue: 'http://localhost:8080',
+);
 
 /// Why a call to the backend failed, in terms the app can act on.
 enum BackendFailure {
-  /// The AI settings are not set up.
-  notConfigured,
+  /// Not signed in, or the session is no longer valid.
+  signedOut,
 
-  /// No answer: the backend is down, the address is wrong, or there is no
-  /// network.
+  /// No answer: the backend is down, or there is no network.
   unreachable,
 
-  /// The app token was refused.
-  unauthorized,
+  /// Sign in with Apple could not be verified.
+  invalidIdentity,
 
-  /// Too many requests in the last hour.
+  /// Every correction of the quota is used for now.
+  quotaExceeded,
+
+  /// Too many requests to the backend in the last hour.
   rateLimited,
 
   /// The model could not be reached or answered with something unusable.
@@ -43,30 +53,91 @@ class BackendException implements Exception {
   String toString() => 'BackendException(${failure.name}, $detail)';
 }
 
-/// Talks to the app's backend with the saved AI settings.
+/// What signing in gives back.
+typedef SignedIn = ({Session session, Quota quota});
+
+/// Talks to the app's backend.
 ///
 /// Plain HTTP and JSON over `dart:io`, with no package in between. Each call
-/// reads the settings afresh, so a change applies at once.
+/// reads the session afresh, so signing in or out applies at once. When the
+/// backend refuses a session, [onSignedOut] is called, so the app can forget
+/// it and ask the person to sign in again.
 class BackendClient {
-  BackendClient(this._settings, {HttpClient Function()? newHttpClient})
-    : _newHttpClient = newHttpClient ?? HttpClient.new;
+  BackendClient(
+    this._baseUrl,
+    this._session, {
+    void Function()? onSignedOut,
+    HttpClient Function()? newHttpClient,
+  }) : _onSignedOut = onSignedOut,
+       _newHttpClient = newHttpClient ?? HttpClient.new;
 
   static const _timeout = Duration(seconds: 120);
 
-  final Future<AiSettings?> Function() _settings;
+  final Uri _baseUrl;
+  final Future<Session?> Function() _session;
+  final void Function()? _onSignedOut;
   final HttpClient Function() _newHttpClient;
 
-  /// Checks that the backend answers and accepts the token.
-  Future<void> ping() async {
-    await _send('GET', '/api/v1/ping');
+  /// Opens a session with an identity token from Sign in with Apple and the
+  /// raw nonce whose hash it carries.
+  Future<SignedIn> signInWithApple({
+    required String identityToken,
+    required String nonce,
+  }) async {
+    final answer = await _object(
+      'POST',
+      '/api/v1/auth/apple',
+      body: {'identityToken': identityToken, 'nonce': nonce},
+      signedIn: false,
+    );
+    try {
+      final expiresAt = DateTime.tryParse('${answer['expiresAt']}');
+      final token = answer['accessToken'];
+      if (token is! String || expiresAt == null) {
+        throw const FormatException('The session is incomplete.');
+      }
+      return (
+        session: Session(accessToken: token, expiresAt: expiresAt),
+        quota: Quota.fromJson(answer['quota']),
+      );
+    } on FormatException catch (e) {
+      throw BackendException(BackendFailure.unexpected, e.message);
+    } on ArgumentError {
+      throw const BackendException(
+        BackendFailure.unexpected,
+        'The session is blank.',
+      );
+    }
+  }
+
+  /// Where the account stands with its quota.
+  Future<Quota> quota() async {
+    final answer = await _object('GET', '/api/v1/me');
+    try {
+      return Quota.fromJson(answer['quota']);
+    } on FormatException catch (e) {
+      throw BackendException(BackendFailure.unexpected, e.message);
+    }
+  }
+
+  /// Deletes the account and everything the backend holds about it.
+  Future<void> deleteAccount() async {
+    await _send('DELETE', '/api/v1/account');
   }
 
   /// Posts [body] as JSON to [path] and returns the JSON object answered.
   Future<Map<String, Object?>> postJson(
     String path,
     Map<String, Object?> body,
-  ) async {
-    final answer = await _send('POST', path, body: body);
+  ) => _object('POST', path, body: body);
+
+  Future<Map<String, Object?>> _object(
+    String method,
+    String path, {
+    Map<String, Object?>? body,
+    bool signedIn = true,
+  }) async {
+    final answer = await _send(method, path, body: body, signedIn: signedIn);
     if (answer is! Map<String, Object?>) {
       throw const BackendException(
         BackendFailure.unexpected,
@@ -80,24 +151,36 @@ class BackendClient {
     String method,
     String path, {
     Map<String, Object?>? body,
+    bool signedIn = true,
   }) async {
-    final settings = await _settings();
-    if (settings == null) {
-      throw const BackendException(BackendFailure.notConfigured);
+    Session? session;
+    if (signedIn) {
+      session = await _session();
+      if (session == null) {
+        throw const BackendException(BackendFailure.signedOut);
+      }
     }
 
-    final client = _newHttpClient()..connectionTimeout = const Duration(seconds: 15);
+    final client = _newHttpClient()
+      ..connectionTimeout = const Duration(seconds: 15);
     try {
-      final request = await client.openUrl(method, settings.resolve(path));
-      request.headers
-        ..set('X-App-Token', settings.appToken)
-        ..set(HttpHeaders.acceptHeader, 'application/json');
+      final request = await client.openUrl(method, _baseUrl.resolve(path));
+      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      if (session != null) {
+        request.headers.set(
+          HttpHeaders.authorizationHeader,
+          'Bearer ${session.accessToken}',
+        );
+      }
       if (body != null) {
         request.headers.contentType = ContentType.json;
         request.add(utf8.encode(jsonEncode(body)));
       }
       final response = await request.close().timeout(_timeout);
-      final text = await response.transform(utf8.decoder).join().timeout(_timeout);
+      final text = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_timeout);
 
       final status = response.statusCode;
       if (status >= 200 && status < 300) {
@@ -110,7 +193,11 @@ class BackendClient {
           );
         }
       }
-      throw BackendException(_failureOf(status, text), 'HTTP $status');
+      final failure = _failureOf(status, text);
+      if (failure == BackendFailure.signedOut && signedIn) {
+        _onSignedOut?.call();
+      }
+      throw BackendException(failure, 'HTTP $status');
     } on BackendException {
       rethrow;
     } on SocketException catch (e) {
@@ -135,7 +222,9 @@ class BackendClient {
       // Not one of the backend's own errors.
     }
     return switch ((status, code)) {
-      (401, _) => BackendFailure.unauthorized,
+      (401, 'invalid_identity') => BackendFailure.invalidIdentity,
+      (401, _) => BackendFailure.signedOut,
+      (429, 'quota_exceeded') => BackendFailure.quotaExceeded,
       (429, _) => BackendFailure.rateLimited,
       (_, 'ai_refused') => BackendFailure.aiRefused,
       (_, 'ai_unavailable' || 'ai_invalid_response') =>
@@ -146,26 +235,38 @@ class BackendClient {
   }
 }
 
-/// The client for the app's backend, with the saved settings.
+/// The backend's address. Tests may replace it.
+final backendUrlProvider = Provider<Uri>((ref) => Uri.parse(backendUrl));
+
+/// The client for the app's backend, with the saved session. A session the
+/// backend refuses is forgotten, which sends the person back to sign in.
 final backendClientProvider = Provider<BackendClient>((ref) {
-  final store = ref.watch(aiSettingsStoreProvider);
-  return BackendClient(store.read);
+  final store = ref.watch(sessionStoreProvider);
+  return BackendClient(
+    ref.watch(backendUrlProvider),
+    store.read,
+    onSignedOut: () async {
+      await store.clear();
+      ref.invalidate(sessionProvider);
+    },
+  );
 });
 
 /// What a person can do about a failure, in one sentence.
 String describeBackendFailure(BackendFailure failure) => switch (failure) {
-  BackendFailure.notConfigured =>
-    'AI correction is not set up yet. Add your backend in the AI settings.',
+  BackendFailure.signedOut => 'Your session has ended. Sign in again.',
   BackendFailure.unreachable =>
-    'The backend could not be reached. Check that it is running and that '
-        'the address is right.',
-  BackendFailure.unauthorized =>
-    'The backend refused the app token. Check it in the AI settings.',
+    'Leera could not be reached. Check your connection and try again.',
+  BackendFailure.invalidIdentity =>
+    'Sign in with Apple could not be verified. Try again.',
+  BackendFailure.quotaExceeded =>
+    'You have used all your corrections for now. Your presentation is '
+        'saved: it can be corrected when your quota starts again.',
   BackendFailure.rateLimited =>
-    'Too many corrections in the last hour. Try again a little later.',
+    'Leera is very busy right now. Try again a little later.',
   BackendFailure.aiUnavailable =>
     'The correction service is not available right now. Try again.',
   BackendFailure.aiRefused => 'This presentation could not be corrected.',
   BackendFailure.unexpected =>
-    'Something unexpected came back from the backend. Try again.',
+    'Something unexpected came back from Leera. Try again.',
 };

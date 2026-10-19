@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
-import '../../../core/ai/ai_settings.dart';
+import '../../../core/auth/auth_actions.dart';
+import '../../../core/auth/quota.dart';
+import '../../../core/auth/session.dart';
 import '../../../core/common/widgets/design/emoji_badge.dart';
 import '../../../core/common/widgets/design/soft_chip.dart';
 import '../../../core/common/widgets/load_failure.dart';
@@ -33,7 +35,7 @@ class EnglishPage extends ConsumerWidget {
     final inProgress = ref.watch(sessionInProgressProvider).value;
     final stats = ref.watch(practiceStatsProvider);
     final level = ref.watch(feedbackHistoryProvider).value?.level;
-    final aiSetUp = ref.watch(aiSettingsProvider).value != null;
+    final quota = ref.watch(quotaProvider).value;
 
     final challenge = DailyChallengeCard(
       continuing: inProgress != null,
@@ -41,8 +43,8 @@ class EnglishPage extends ConsumerWidget {
     );
     final levelCard = _LevelCard(
       level: level,
-      aiSetUp: aiSetUp,
-      onOpenSettings: () => context.pushNamed(aiSettingsRouteName),
+      quota: quota,
+      onOpenAccount: () => context.pushNamed(accountRouteName),
     );
     final sessions = stats.when(
       data: (stats) => FinishedSessions(sessions: stats.completed.take(5)),
@@ -100,19 +102,22 @@ class EnglishPage extends ConsumerWidget {
 class _LevelCard extends StatelessWidget {
   const _LevelCard({
     required this.level,
-    required this.aiSetUp,
-    required this.onOpenSettings,
+    required this.quota,
+    required this.onOpenAccount,
   });
 
   /// Null before the first correction.
   final String? level;
-  final bool aiSetUp;
-  final VoidCallback onOpenSettings;
+
+  /// Null until it has been asked for.
+  final Quota? quota;
+  final VoidCallback onOpenAccount;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final level = this.level;
+    final quota = this.quota;
 
     return Card(
       child: Padding(
@@ -152,16 +157,16 @@ class _LevelCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             TextButton(
-              key: const ValueKey('open-ai-settings'),
-              onPressed: onOpenSettings,
+              key: const ValueKey('open-account'),
+              onPressed: onOpenAccount,
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(0, 44),
               ),
               child: Text(
-                aiSetUp
-                    ? '⚙️ AI correction is on'
-                    : '⚙️ Set up AI correction',
+                quota == null
+                    ? '👤 Your account'
+                    : '👤 ${describeQuota(quota)}',
               ),
             ),
           ],

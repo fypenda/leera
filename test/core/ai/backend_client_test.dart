@@ -2,16 +2,18 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:leera/core/ai/ai_settings.dart';
 import 'package:leera/core/ai/backend_client.dart';
+import 'package:leera/core/auth/apple_sign_in.dart';
+import 'package:leera/core/auth/quota.dart';
+import 'package:leera/core/auth/session.dart';
 
 /// A local server that answers every request with [status] and [body], and
 /// remembers the last request.
 class _Backend {
   late HttpServer server;
   int status = 200;
-  String body = '{"status":"ok"}';
-  String? token;
+  String body = '{}';
+  String? authorization;
   String? method;
   String? path;
   Object? received;
@@ -19,7 +21,7 @@ class _Backend {
   Future<void> start() async {
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
-      token = request.headers.value('X-App-Token');
+      authorization = request.headers.value(HttpHeaders.authorizationHeader);
       method = request.method;
       path = request.uri.path;
       final text = await utf8.decodeStream(request);
@@ -32,11 +34,16 @@ class _Backend {
     });
   }
 
-  AiSettings settings({String token = 'secret'}) => AiSettings(
-    baseUrl: 'http://${server.address.host}:${server.port}/',
-    appToken: token,
-  );
+  Uri get url => Uri.parse('http://${server.address.host}:${server.port}');
 }
+
+final _session = Session(
+  accessToken: 'session-token',
+  expiresAt: DateTime.utc(2026, 11, 18),
+);
+
+const _quotaJson =
+    '{"plan":"free","used":0,"limit":1,"resetsAt":"2026-10-26T00:00:00Z"}';
 
 Matcher _fails(BackendFailure failure) => throwsA(
   isA<BackendException>().having((e) => e.failure, 'failure', failure),
@@ -45,20 +52,67 @@ Matcher _fails(BackendFailure failure) => throwsA(
 void main() {
   late _Backend backend;
   late BackendClient client;
+  late int signedOut;
 
   setUp(() async {
     backend = _Backend();
     await backend.start();
-    client = BackendClient(() async => backend.settings());
+    signedOut = 0;
+    client = BackendClient(
+      backend.url,
+      () async => _session,
+      onSignedOut: () => signedOut++,
+    );
   });
   tearDown(() => backend.server.close(force: true));
 
-  test('a ping carries the token', () async {
-    await client.ping();
+  test('signing in sends the identity token and the raw nonce', () async {
+    backend.body =
+        '{"accessToken":"new-token","expiresAt":"2026-11-18T10:00:00Z",'
+        '"quota":$_quotaJson}';
+    final signedOutClient = BackendClient(backend.url, () async => null);
+
+    final signedIn = await signedOutClient.signInWithApple(
+      identityToken: 'apple-token',
+      nonce: 'raw-nonce',
+    );
+
+    expect(backend.method, 'POST');
+    expect(backend.path, '/api/v1/auth/apple');
+    expect(backend.authorization, isNull);
+    expect(backend.received, {
+      'identityToken': 'apple-token',
+      'nonce': 'raw-nonce',
+    });
+    expect(signedIn.session.accessToken, 'new-token');
+    expect(signedIn.session.expiresAt, DateTime.utc(2026, 11, 18, 10));
+    expect(signedIn.quota.plan, Plan.free);
+    expect(signedIn.quota.remaining, 1);
+  });
+
+  test('a refused identity says so', () async {
+    backend
+      ..status = 401
+      ..body = '{"code":"invalid_identity","message":"x"}';
+
+    await expectLater(
+      client.signInWithApple(identityToken: 't', nonce: 'n'),
+      _fails(BackendFailure.invalidIdentity),
+    );
+    // Signing in is not a session being refused.
+    expect(signedOut, 0);
+  });
+
+  test('every other call carries the session', () async {
+    backend.body = '{"quota":$_quotaJson}';
+
+    final quota = await client.quota();
 
     expect(backend.method, 'GET');
-    expect(backend.path, '/api/v1/ping');
-    expect(backend.token, 'secret');
+    expect(backend.path, '/api/v1/me');
+    expect(backend.authorization, 'Bearer session-token');
+    expect(quota.limit, 1);
+    expect(quota.resetsAt, DateTime.utc(2026, 10, 26));
   });
 
   test('a post sends JSON and returns the JSON answered', () async {
@@ -73,15 +127,39 @@ void main() {
     expect(backend.received, {'presentation': 'Hello'});
   });
 
-  test('nothing is sent without settings', () async {
-    final unset = BackendClient(() async => null);
+  test('deleting the account sends DELETE and expects nothing back', () async {
+    backend
+      ..status = 204
+      ..body = '';
 
-    await expectLater(unset.ping(), _fails(BackendFailure.notConfigured));
+    await client.deleteAccount();
+
+    expect(backend.method, 'DELETE');
+    expect(backend.path, '/api/v1/account');
+  });
+
+  test('nothing is sent when signed out', () async {
+    final signedOutClient = BackendClient(backend.url, () async => null);
+
+    await expectLater(signedOutClient.quota(), _fails(BackendFailure.signedOut));
     expect(backend.method, isNull);
   });
 
+  test('a session the backend refuses is reported', () async {
+    backend
+      ..status = 401
+      ..body = '{"code":"unauthorized","message":"x"}';
+
+    await expectLater(client.quota(), _fails(BackendFailure.signedOut));
+    expect(signedOut, 1);
+  });
+
   for (final (status, body, failure) in [
-    (401, '{"code":"unauthorized","message":"x"}', BackendFailure.unauthorized),
+    (
+      429,
+      '{"code":"quota_exceeded","message":"x"}',
+      BackendFailure.quotaExceeded,
+    ),
     (429, '{"code":"rate_limited","message":"x"}', BackendFailure.rateLimited),
     (422, '{"code":"ai_refused","message":"x"}', BackendFailure.aiRefused),
     (502, '{"code":"ai_unavailable","message":"x"}', BackendFailure.aiUnavailable),
@@ -98,7 +176,10 @@ void main() {
         ..status = status
         ..body = body;
 
-      await expectLater(client.ping(), _fails(failure));
+      await expectLater(
+        client.postJson('/api/v1/english/feedback', {}),
+        _fails(failure),
+      );
     });
   }
 
@@ -121,14 +202,11 @@ void main() {
   });
 
   test('a backend that is not there is unreachable', () async {
-    final port = backend.server.port;
+    final url = backend.url;
     await backend.server.close(force: true);
-    final gone = BackendClient(
-      () async =>
-          AiSettings(baseUrl: 'http://127.0.0.1:$port', appToken: 'secret'),
-    );
+    final gone = BackendClient(url, () async => _session);
 
-    await expectLater(gone.ping(), _fails(BackendFailure.unreachable));
+    await expectLater(gone.quota(), _fails(BackendFailure.unreachable));
   });
 
   test('every failure has something to say', () {
@@ -137,29 +215,50 @@ void main() {
     }
   });
 
-  group('settings', () {
-    test('the address loses its trailing slashes and must be http(s)', () {
-      final settings = AiSettings(
-        baseUrl: ' https://api.example.com// ',
-        appToken: ' token ',
+  group('the quota', () {
+    test('says what is left, for the week or the day', () {
+      Quota quota(Plan plan, int used, int limit) => Quota(
+        plan: plan,
+        used: used,
+        limit: limit,
+        resetsAt: DateTime.utc(2026, 10, 26),
       );
-      expect(settings.baseUrl, 'https://api.example.com');
-      expect(settings.appToken, 'token');
-      expect(
-        settings.resolve('/api/v1/ping').toString(),
-        'https://api.example.com/api/v1/ping',
-      );
+      expect(describeQuota(quota(Plan.free, 0, 1)), '1 correction left this week');
+      expect(describeQuota(quota(Plan.free, 1, 1)), 'No corrections left this week');
+      expect(describeQuota(quota(Plan.plus, 1, 3)), '2 corrections left today');
+      expect(describeQuota(quota(Plan.plus, 5, 3)), 'No corrections left today');
+    });
 
+    test('an incomplete quota is refused', () {
+      expect(() => Quota.fromJson(null), throwsFormatException);
       expect(
-        () => AiSettings(baseUrl: 'ftp://x', appToken: 't'),
-        throwsArgumentError,
+        () => Quota.fromJson({'plan': 'gold', 'used': 0, 'limit': 1}),
+        throwsFormatException,
       );
       expect(
-        () => AiSettings(baseUrl: 'not an address', appToken: 't'),
-        throwsArgumentError,
+        () => Quota.fromJson({'plan': 'free', 'used': 0, 'limit': 1}),
+        throwsFormatException,
       );
+    });
+  });
+
+  group('the nonce', () {
+    test('is new every time, and Apple gets its SHA-256 in hex', () {
+      final first = newNonce();
+      expect(newNonce(), isNot(first));
       expect(
-        () => AiSettings(baseUrl: 'http://x', appToken: '  '),
+        hashNonce('abc'),
+        'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+      );
+    });
+  });
+
+  group('a session', () {
+    test('expires at its time, and must not be blank', () {
+      expect(_session.isExpiredAt(DateTime.utc(2026, 11, 17)), isFalse);
+      expect(_session.isExpiredAt(DateTime.utc(2026, 11, 18)), isTrue);
+      expect(
+        () => Session(accessToken: '  ', expiresAt: DateTime.utc(2026)),
         throwsArgumentError,
       );
     });

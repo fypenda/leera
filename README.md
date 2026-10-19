@@ -19,9 +19,9 @@ This app was extracted from the English module of
 | Path | What it holds |
 | --- | --- |
 | `lib/features/english/` | The whole feature: domain, data, application, pages |
-| `lib/core/` | Database, AI backend client, audio, time, shared widgets |
-| `lib/app/` | App entry, router, theme, AI settings page |
-| `backend/` | Spring Boot gateway to Claude (the API key never ships in the app) |
+| `lib/core/` | Database, backend client, Sign in with Apple and session, audio, time, shared widgets |
+| `lib/app/` | App entry, router, theme, sign-in and account pages |
+| `backend/` | Spring Boot: accounts, quotas, and the gateway to Claude (the API key never ships in the app) |
 | `ios/` | iOS project, with on-device speech transcription (`AppDelegate.swift`) |
 
 ## First run
@@ -33,7 +33,14 @@ flutter pub get
 dart run build_runner build --delete-conflicting-outputs
 dart run drift_dev make-migrations   # records schema v1 in drift_schemas/
 flutter test
+flutter run --dart-define=LEERA_API_URL=http://localhost:8080
 ```
+
+The app opens on Sign in with Apple, then talks to the backend at
+`LEERA_API_URL` (`http://localhost:8080` when not given). Sign in with Apple
+needs the capability on the App ID in the Apple Developer account
+(`ios/Runner/Runner.entitlements` already asks for it) and a device or
+simulator signed in to an Apple ID.
 
 `lib/core/database/app_database.g.dart` was cut down by hand from NOURISH's
 generated file to the three English tables. `build_runner` regenerates it;
@@ -47,9 +54,9 @@ The backend: see [`backend/README.md`](backend/README.md).
   id (provisionally `dev.penda.leera`).
 - Bring the screens in line with the Leera design canvas (Today with the
   week and streak, Topic, Speak, Write, Feedback, Progress, Leera Plus).
-- Replace the AI settings page (backend address and token typed by hand) by a
-  built-in backend address and per-user authentication, with quotas.
-- Onboarding (level, interests), a larger topic bank, streak, paywall
-  (RevenueCat).
+- Paywall with RevenueCat, and its webhook on the backend to set Leera Plus.
+- Revoke the Sign in with Apple tokens when an account is deleted (see
+  `backend/README.md`).
+- Onboarding (level, interests), a larger topic bank, streak.
 - Optional: bring back the vocabulary journal and score charts, which lived in
   NOURISH's Journal and Progress pages.

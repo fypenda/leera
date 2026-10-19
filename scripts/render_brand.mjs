@@ -4,6 +4,13 @@
 //
 // Needs Playwright with Chromium (npm i -g playwright && npx playwright
 // install chromium). Run from the project root.
+//
+// The App Store refuses an icon with an alpha channel. Afterwards, with
+// ImageMagick:
+//   for f in ios/Runner/Assets.xcassets/AppIcon.appiconset/*.png \
+//            assets/brand/app_icon_1024.png; do
+//     magick "$f" -background '#5FC4D2' -alpha remove -alpha off "$f"
+//   done
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -62,6 +69,10 @@ for (const [s, suffix] of [[1, ''], [2, '@2x'], [3, '@3x']]) {
   await shoot(page(launch, 260, 300), 260, 300, s,
     `${assets}/LaunchImage.imageset/LaunchImage${suffix}.png`);
 }
+
+// The logo inside the app (sign-in page), at three times its 120 pt size.
+await shoot(page(logo.replace('<svg ', '<svg width="120" height="120" '), 120, 120), 120, 120, 3,
+  `${root}/assets/brand/logo.png`);
 
 // Three bars that rise, in place of the dots.
 const bars = `<div style="height:26px;display:flex;align-items:flex-end;gap:5px">

@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:leera/app/app.dart';
-import 'package:leera/core/ai/ai_settings.dart';
+import 'package:leera/core/ai/backend_client.dart';
 import 'package:leera/core/audio/audio_playback.dart';
 import 'package:leera/core/audio/recording_files.dart';
 import 'package:leera/core/audio/transcriber.dart';
 import 'package:leera/core/audio/voice_recorder.dart';
+import 'package:leera/core/auth/apple_sign_in.dart';
+import 'package:leera/core/auth/session.dart';
 import 'package:leera/core/database/database_provider.dart';
 import 'package:leera/core/time/clock.dart';
 
@@ -22,14 +24,17 @@ const iPhonePortrait = Size(390, 844);
 
 /// Starts the whole app in a window of [size], on Monday 5 October 2026.
 ///
-/// The app gets an empty in-memory database unless [connection] is given,
-/// and no AI settings unless [aiSettings] holds some.
+/// The app gets an empty in-memory database unless [connection] is given.
+/// It is signed in unless [sessions] says otherwise, and its backend is a
+/// [FakeBackendClient] unless [backend] is given.
 Future<ProviderContainer> pumpEnglishApp(
   WidgetTester tester,
   Size size, {
   QueryExecutor? connection,
   Clock? clock,
-  AiSettingsStore? aiSettings,
+  SessionStore? sessions,
+  AppleSignIn? appleSignIn,
+  BackendClient? backend,
   VoiceRecorder? recorder,
   AudioPlayback? player,
   RecordingFiles? recordingFiles,
@@ -50,10 +55,12 @@ Future<ProviderContainer> pumpEnglishApp(
         databaseConnectionProvider.overrideWithValue(
           connection ?? NativeDatabase.memory(),
         ),
-        // No AI is set up unless a test says so: nothing leaves the device.
-        aiSettingsStoreProvider.overrideWithValue(
-          aiSettings ?? InMemoryAiSettingsStore(),
+        // Signed in, and nothing leaves the device: the backend is a fake.
+        sessionStoreProvider.overrideWithValue(
+          sessions ?? InMemorySessionStore(testSession()),
         ),
+        appleSignInProvider.overrideWithValue(appleSignIn ?? FakeAppleSignIn()),
+        backendClientProvider.overrideWithValue(backend ?? FakeBackendClient()),
         // No microphone, speaker or disk: fakes the test can drive.
         voiceRecorderProvider.overrideWithValue(
           recorder ?? FakeVoiceRecorder(),

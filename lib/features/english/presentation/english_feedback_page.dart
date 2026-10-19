@@ -5,8 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../core/ai/ai_settings.dart';
 import '../../../core/ai/backend_client.dart';
+import '../../../core/auth/auth_actions.dart';
+import '../../../core/auth/session.dart';
 import '../../../core/audio/transcriber.dart';
 import '../../../core/common/widgets/design/score_bar.dart';
 import '../../../core/common/widgets/load_failure.dart';
@@ -143,7 +144,11 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
       debugPrint('Feedback request failed: $e');
       if (mounted) setState(() => _failure = BackendFailure.unexpected);
     } finally {
-      if (mounted) setState(() => _requesting = false);
+      // One correction more, or none: either way the quota shown changes.
+      if (mounted) {
+        ref.invalidate(quotaProvider);
+        setState(() => _requesting = false);
+      }
     }
   }
 
@@ -151,7 +156,6 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
   Widget build(BuildContext context) {
     final session = widget.session;
     final feedbacks = ref.watch(feedbacksProvider);
-    final settings = ref.watch(aiSettingsProvider);
     final recordings = ref.watch(recordingsProvider);
     final recording = recordings.value?[session.id];
     final transcript = recording?.transcript;
@@ -160,12 +164,12 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
       null => null,
     };
 
-    final Widget body = switch ((feedbacks, settings)) {
-      (AsyncError(), _) => LoadFailure(
+    final Widget body = switch (feedbacks) {
+      AsyncError() => LoadFailure(
         message: 'Your corrections could not be loaded.',
         onRetry: () => ref.invalidate(feedbacksProvider),
       ),
-      (AsyncData(value: final stored), _) when stored[session.id] != null =>
+      AsyncData(value: final stored) when stored[session.id] != null =>
         _Correction(session: session, feedback: stored[session.id]!),
       // Spoken: the recording must be there, then heard, before anything
       // can be corrected.
@@ -220,18 +224,7 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
             child: const Text('Listen again'),
           ),
         ),
-      (AsyncData(), AsyncData(value: null)) => _Message(
-        key: const ValueKey('ai-not-set-up'),
-        title: 'Set up AI correction ⚙️',
-        text:
-            'Your presentation is saved. Connect the app to your backend to '
-            'have it corrected: nothing is sent until you do.',
-        action: FilledButton(
-          onPressed: () => context.pushNamed(aiSettingsRouteName),
-          child: const Text('Open the AI settings'),
-        ),
-      ),
-      (AsyncData(), AsyncData()) when _failure != null => _Message(
+      AsyncData() when _failure != null => _Message(
         key: const ValueKey('feedback-failed'),
         title: 'No correction this time',
         text: describeBackendFailure(_failure!),
@@ -239,21 +232,22 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
           spacing: AppSpacing.md,
           runSpacing: AppSpacing.md,
           children: [
-            FilledButton(
-              key: const ValueKey('retry-feedback'),
-              onPressed: _request,
-              child: const Text('Try again'),
-            ),
-            if (_failure == BackendFailure.unauthorized ||
-                _failure == BackendFailure.unreachable)
+            if (_failure != BackendFailure.quotaExceeded)
+              FilledButton(
+                key: const ValueKey('retry-feedback'),
+                onPressed: _request,
+                child: const Text('Try again'),
+              ),
+            if (_failure == BackendFailure.quotaExceeded)
               OutlinedButton(
-                onPressed: () => context.pushNamed(aiSettingsRouteName),
-                child: const Text('AI settings'),
+                key: const ValueKey('feedback-open-account'),
+                onPressed: () => context.pushNamed(accountRouteName),
+                child: const Text('See my account'),
               ),
           ],
         ),
       ),
-      (AsyncData(), AsyncData()) => () {
+      AsyncData() => () {
         if (!_askedOnce) {
           _askedOnce = true;
           _soon(_request);

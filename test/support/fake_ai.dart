@@ -1,28 +1,90 @@
-import 'package:leera/core/ai/ai_settings.dart';
 import 'package:leera/core/ai/backend_client.dart';
+import 'package:leera/core/auth/apple_sign_in.dart';
+import 'package:leera/core/auth/quota.dart';
+import 'package:leera/core/auth/session.dart';
 import 'package:leera/features/english/domain/feedback_api.dart';
 import 'package:leera/features/english/domain/practice_topic.dart';
 import 'package:leera/features/english/domain/restitution_format.dart';
 import 'package:leera/features/english/domain/session_feedback.dart';
 
-/// AI settings kept in memory, in place of the Keychain.
-class InMemoryAiSettingsStore implements AiSettingsStore {
-  InMemoryAiSettingsStore([this.settings]);
+/// A session kept in memory, in place of the Keychain.
+class InMemorySessionStore implements SessionStore {
+  InMemorySessionStore([this.session]);
 
-  AiSettings? settings;
-
-  @override
-  Future<AiSettings?> read() async => settings;
+  Session? session;
 
   @override
-  Future<void> write(AiSettings settings) async => this.settings = settings;
+  Future<Session?> read() async => session;
 
   @override
-  Future<void> clear() async => settings = null;
+  Future<void> write(Session session) async => this.session = session;
+
+  @override
+  Future<void> clear() async => session = null;
 }
 
-AiSettings testAiSettings() =>
-    AiSettings(baseUrl: 'http://localhost:8080', appToken: 'test-token');
+Session testSession() => Session(
+  accessToken: 'test-session',
+  expiresAt: DateTime.utc(2026, 11, 4),
+);
+
+Quota testQuota({Plan plan = Plan.free, int used = 0, int limit = 1}) => Quota(
+  plan: plan,
+  used: used,
+  limit: limit,
+  resetsAt: DateTime.utc(2026, 10, 12),
+);
+
+/// Sign in with Apple without Apple: gives [token], or null as if the
+/// sheet were closed, and remembers the hashed nonces it was given.
+class FakeAppleSignIn implements AppleSignIn {
+  FakeAppleSignIn({this.token = 'apple-identity-token'});
+
+  String? token;
+  final hashedNonces = <String>[];
+
+  @override
+  Future<String?> identityToken({required String hashedNonce}) async {
+    hashedNonces.add(hashedNonce);
+    return token;
+  }
+}
+
+/// The backend's account calls, answered from memory. Anything else fails
+/// as if the backend could not be reached: nothing leaves the device in
+/// tests, and a test that wants a correction gives a [FakeFeedbackApi].
+class FakeBackendClient extends BackendClient {
+  FakeBackendClient({Quota? quota, this.signInFailure})
+    : currentQuota = quota ?? testQuota(),
+      super(Uri.parse('http://backend.test'), () async => null);
+
+  Quota currentQuota;
+  BackendFailure? signInFailure;
+  final signIns = <({String identityToken, String nonce})>[];
+  var deletions = 0;
+
+  @override
+  Future<SignedIn> signInWithApple({
+    required String identityToken,
+    required String nonce,
+  }) async {
+    signIns.add((identityToken: identityToken, nonce: nonce));
+    if (signInFailure case final failure?) throw BackendException(failure);
+    return (session: testSession(), quota: currentQuota);
+  }
+
+  @override
+  Future<Quota> quota() async => currentQuota;
+
+  @override
+  Future<void> deleteAccount() async => deletions++;
+
+  @override
+  Future<Map<String, Object?>> postJson(
+    String path,
+    Map<String, Object?> body,
+  ) async => throw const BackendException(BackendFailure.unreachable);
+}
 
 /// What a [FakeFeedbackApi] was asked.
 typedef FeedbackCall = ({

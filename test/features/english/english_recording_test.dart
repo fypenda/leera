@@ -133,11 +133,12 @@ void main() {
       await _tap(tester, _key('play-recording'));
       expect(player.pauses, 1);
 
-      // Sent: heard, then (with no AI set up) kept for correction.
+      // Sent: heard, then kept for correction (the backend is out of reach
+      // in tests).
       await tester.ensureVisible(_key('send-for-feedback'));
       await tester.pumpAndSettle();
       await tester.tap(_key('send-for-feedback'));
-      await pumpUntil(tester, _key('ai-not-set-up'));
+      await pumpUntil(tester, _key('feedback-failed'));
       expect(find.byType(EnglishFeedbackPage), findsOneWidget);
       expect(_key('recording-player'), findsOneWidget);
       expect(_key('sent-transcript'), findsOneWidget);

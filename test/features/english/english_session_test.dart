@@ -87,10 +87,15 @@ void main() {
         await _tap(tester, find.byKey(const ValueKey('switch-format')));
       }
       await tester.enterText(_writtenField, 'The canal opened in 1869.');
-      await _tap(tester, find.byKey(const ValueKey('send-for-feedback')));
+      final send = find.byKey(const ValueKey('send-for-feedback'));
+      await tester.ensureVisible(send);
+      await tester.pumpAndSettle();
+      await tester.tap(send);
+      // The backend is out of reach in tests: no correction comes back, and
+      // the presentation is kept. (A progress bar animates while it is asked
+      // for, so this does not wait for the screen to settle.)
+      await pumpUntil(tester, find.byKey(const ValueKey('feedback-failed')));
       expect(find.byType(EnglishFeedbackPage), findsOneWidget);
-      // No AI is set up: nothing is sent, and the page says how to set it up.
-      expect(find.byKey(const ValueKey('ai-not-set-up')), findsOneWidget);
       expect(find.text('The canal opened in 1869.'), findsOneWidget);
       expect(tester.takeException(), isNull);
 

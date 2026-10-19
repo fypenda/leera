@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:leera/app/router.dart';
-import 'package:leera/app/settings/ai_settings_page.dart';
+import 'package:leera/app/account/account_page.dart';
 import 'package:leera/core/ai/backend_client.dart';
 import 'package:leera/features/english/data/backend_feedback_api.dart';
 import 'package:leera/features/english/data/practice_session_repository_provider.dart';
@@ -34,16 +34,14 @@ Future<void> _tap(WidgetTester tester, Finder target) async {
   await settle(tester);
 }
 
-/// Starts the app, with AI set up and [api] answering, unless said otherwise.
+/// Starts the app, signed in, with [api] answering unless said otherwise.
 Future<ProviderContainer> _pumpApp(
   WidgetTester tester, {
   FakeFeedbackApi? api,
-  InMemoryAiSettingsStore? settings,
   Size size = iPadLandscape,
 }) => pumpEnglishApp(
   tester,
   size,
-  aiSettings: settings ?? InMemoryAiSettingsStore(testAiSettings()),
   overrides: [if (api != null) feedbackApiProvider.overrideWithValue(api)],
 );
 
@@ -189,68 +187,22 @@ void main() {
     expect(api.calls, isEmpty);
   });
 
-  appTest('without AI settings nothing is sent, and they can be set up', (
-    tester,
-  ) async {
-    final api = FakeFeedbackApi();
-    final settings = InMemoryAiSettingsStore();
-    final container = await _pumpApp(tester, api: api, settings: settings);
+  appTest('a used-up quota says so and leads to the account', (tester) async {
+    final api = FakeFeedbackApi(failure: BackendFailure.quotaExceeded);
+    final container = await _pumpApp(tester, api: api);
     final session = await _finished(tester, container);
 
     _openFeedback(container, session);
-    await settle(tester);
-    expect(find.byKey(const ValueKey('ai-not-set-up')), findsOneWidget);
-    expect(api.calls, isEmpty);
-
-    await _tap(tester, find.text('Open the AI settings'));
-    expect(find.byType(AiSettingsPage), findsOneWidget);
-    await tester.enterText(
-      find.byKey(const ValueKey('ai-base-url')),
-      'http://localhost:8080/',
+    await _pumpUntil(tester, find.byKey(const ValueKey('feedback-failed')));
+    expect(
+      find.text(describeBackendFailure(BackendFailure.quotaExceeded)),
+      findsOneWidget,
     );
-    await tester.enterText(find.byKey(const ValueKey('ai-token')), 'secret');
-    await _tap(tester, find.byKey(const ValueKey('ai-save')));
-    expect(settings.settings?.baseUrl, 'http://localhost:8080');
-    expect(settings.settings?.appToken, 'secret');
+    // Trying again would only be refused again.
+    expect(find.byKey(const ValueKey('retry-feedback')), findsNothing);
 
-    // Back on the session, the correction is asked for at once. Its progress
-    // bar keeps animating while it comes, so this does not wait for the
-    // screen to settle.
-    await tester.tap(find.byKey(const ValueKey('settings-leave')));
-    await _pumpUntil(tester, _headline);
-    expect(api.calls, hasLength(1));
-  });
-
-  appTest('the AI settings page refuses what is not usable, and forgets', (
-    tester,
-  ) async {
-    final settings = InMemoryAiSettingsStore(testAiSettings());
-    await _pumpApp(tester, settings: settings);
-
-    await _tap(tester, find.text('⚙️ AI correction is on'));
-    expect(find.byType(AiSettingsPage), findsOneWidget);
-    // What is saved is shown. (The address is also the field's hint, so
-    // the field itself is read.)
-    String baseUrlShown() => tester
-        .widget<TextField>(find.byKey(const ValueKey('ai-base-url')))
-        .controller!
-        .text;
-    expect(baseUrlShown(), 'http://localhost:8080');
-
-    await tester.enterText(
-      find.byKey(const ValueKey('ai-base-url')),
-      'localhost:8080',
-    );
-    await _tap(tester, find.byKey(const ValueKey('ai-save')));
-    expect(find.byKey(const ValueKey('ai-settings-error')), findsOneWidget);
-    expect(settings.settings?.baseUrl, 'http://localhost:8080');
-
-    await _tap(tester, find.byKey(const ValueKey('ai-remove')));
-    expect(settings.settings, isNull);
-    expect(baseUrlShown(), isEmpty);
-
-    await _tap(tester, find.byKey(const ValueKey('settings-leave')));
-    expect(find.byType(AiSettingsPage), findsNothing);
+    await _tap(tester, find.byKey(const ValueKey('feedback-open-account')));
+    expect(find.byType(AccountPage), findsOneWidget);
   });
 
   appTest('the corrections feed the level shown on the home page', (
@@ -283,15 +235,18 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('⚙️ AI correction is on'), findsOneWidget);
+    expect(find.text('👤 1 correction left this week'), findsOneWidget);
   });
 
   appTest('before any correction, the home page says what will come', (
     tester,
   ) async {
-    await _pumpApp(tester, settings: InMemoryAiSettingsStore());
+    await _pumpApp(tester);
 
     expect(find.byKey(const ValueKey('english-level')), findsNothing);
-    expect(find.text('⚙️ Set up AI correction'), findsOneWidget);
+    expect(
+      find.text('Estimated after your first correction'),
+      findsOneWidget,
+    );
   });
 }

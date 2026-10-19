@@ -69,7 +69,6 @@ void main() {
       tester,
       iPadLandscape,
       transcriber: transcriber,
-      aiSettings: InMemoryAiSettingsStore(testAiSettings()),
       overrides: [feedbackApiProvider.overrideWithValue(api)],
     );
     final session = await _sentSpoken(tester, container);
@@ -124,8 +123,9 @@ void main() {
 
     transcriber.allowed = true;
     await tester.tap(_key('retry-transcription'));
-    // No AI set up: the transcript is kept, and correction waits for it.
-    await pumpUntil(tester, _key('ai-not-set-up'));
+    // The backend is out of reach in tests: the transcript is kept, and the
+    // correction can be asked for again.
+    await pumpUntil(tester, _key('feedback-failed'));
     expect(
       await _storedTranscript(tester, container, session),
       transcriber.text,
@@ -141,7 +141,6 @@ void main() {
       tester,
       iPadLandscape,
       transcriber: FakeTranscriber(text: ''),
-      aiSettings: InMemoryAiSettingsStore(testAiSettings()),
       overrides: [feedbackApiProvider.overrideWithValue(api)],
     );
     final session = await _sentSpoken(tester, container);
