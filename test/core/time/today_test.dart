@@ -1,10 +1,10 @@
 import 'dart:ui';
 
-import 'package:elora/core/time/calendar_date.dart';
-import 'package:elora/core/time/clock.dart';
-import 'package:elora/core/time/today.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocara/core/time/calendar_date.dart';
+import 'package:vocara/core/time/clock.dart';
+import 'package:vocara/core/time/today.dart';
 
 import '../../support/fake_clock.dart';
 

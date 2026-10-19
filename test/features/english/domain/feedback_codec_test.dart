@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:elora/features/english/domain/feedback_codec.dart';
-import 'package:elora/features/english/domain/session_feedback.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocara/features/english/domain/feedback_codec.dart';
+import 'package:vocara/features/english/domain/session_feedback.dart';
 
 import '../../../support/fake_ai.dart';
 

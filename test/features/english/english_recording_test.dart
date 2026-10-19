@@ -1,15 +1,15 @@
-import 'package:elora/app/router.dart';
-import 'package:elora/features/english/data/practice_session_repository_provider.dart';
-import 'package:elora/features/english/domain/practice_session.dart';
-import 'package:elora/features/english/domain/restitution_format.dart';
-import 'package:elora/features/english/domain/session_recording.dart';
-import 'package:elora/features/english/english_routes.dart';
-import 'package:elora/features/english/presentation/english_feedback_page.dart';
-import 'package:elora/features/english/presentation/english_page.dart';
-import 'package:elora/features/english/presentation/english_topic_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocara/app/router.dart';
+import 'package:vocara/features/english/data/practice_session_repository_provider.dart';
+import 'package:vocara/features/english/domain/practice_session.dart';
+import 'package:vocara/features/english/domain/restitution_format.dart';
+import 'package:vocara/features/english/domain/session_recording.dart';
+import 'package:vocara/features/english/english_routes.dart';
+import 'package:vocara/features/english/presentation/english_feedback_page.dart';
+import 'package:vocara/features/english/presentation/english_page.dart';
+import 'package:vocara/features/english/presentation/english_topic_page.dart';
 
 import '../../support/fake_audio.dart';
 import '../../support/fake_clock.dart';

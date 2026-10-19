@@ -1,5 +1,5 @@
-import 'package:elora/core/time/date_formatting.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocara/core/time/date_formatting.dart';
 
 void main() {
   test('formats weekday, month, day and year', () {

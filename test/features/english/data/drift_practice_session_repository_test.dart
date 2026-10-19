@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
-import 'package:elora/core/database/app_database.dart';
-import 'package:elora/features/english/data/drift_practice_session_repository.dart';
-import 'package:elora/features/english/domain/practice_session.dart';
-import 'package:elora/features/english/domain/practice_session_repository.dart';
-import 'package:elora/features/english/domain/restitution_format.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocara/core/database/app_database.dart';
+import 'package:vocara/features/english/data/drift_practice_session_repository.dart';
+import 'package:vocara/features/english/domain/practice_session.dart';
+import 'package:vocara/features/english/domain/practice_session_repository.dart';
+import 'package:vocara/features/english/domain/restitution_format.dart';
 
 import '../../../support/fake_ai.dart';
 import '../../../support/fake_clock.dart';

@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:elora/core/ai/ai_settings.dart';
-import 'package:elora/core/ai/backend_client.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocara/core/ai/ai_settings.dart';
+import 'package:vocara/core/ai/backend_client.dart';
 
 /// A local server that answers every request with [status] and [body], and
 /// remembers the last request.

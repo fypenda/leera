@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import 'package:elora/features/english/data/topic_catalog.dart';
-import 'package:elora/features/english/domain/practice_topic.dart';
-import 'package:elora/features/english/domain/restitution_format.dart';
-import 'package:elora/features/english/domain/session_draw.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocara/features/english/data/topic_catalog.dart';
+import 'package:vocara/features/english/domain/practice_topic.dart';
+import 'package:vocara/features/english/domain/restitution_format.dart';
+import 'package:vocara/features/english/domain/session_draw.dart';
 
 PracticeTopic _topic(String id) => PracticeTopic(
   id: id,

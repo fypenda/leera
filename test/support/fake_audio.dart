@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:elora/core/audio/audio_playback.dart';
-import 'package:elora/core/audio/recording_files.dart';
-import 'package:elora/core/audio/transcriber.dart';
-import 'package:elora/core/audio/voice_recorder.dart';
+import 'package:vocara/core/audio/audio_playback.dart';
+import 'package:vocara/core/audio/recording_files.dart';
+import 'package:vocara/core/audio/transcriber.dart';
+import 'package:vocara/core/audio/voice_recorder.dart';
 
 /// A microphone that records nothing: the test says how loud and how long.
 class FakeVoiceRecorder implements VoiceRecorder {

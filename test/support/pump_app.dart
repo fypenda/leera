@@ -1,17 +1,17 @@
 import 'package:drift/drift.dart' show QueryExecutor;
 import 'package:drift/native.dart';
-import 'package:elora/app/app.dart';
-import 'package:elora/core/ai/ai_settings.dart';
-import 'package:elora/core/audio/audio_playback.dart';
-import 'package:elora/core/audio/recording_files.dart';
-import 'package:elora/core/audio/transcriber.dart';
-import 'package:elora/core/audio/voice_recorder.dart';
-import 'package:elora/core/database/database_provider.dart';
-import 'package:elora/core/time/clock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocara/app/app.dart';
+import 'package:vocara/core/ai/ai_settings.dart';
+import 'package:vocara/core/audio/audio_playback.dart';
+import 'package:vocara/core/audio/recording_files.dart';
+import 'package:vocara/core/audio/transcriber.dart';
+import 'package:vocara/core/audio/voice_recorder.dart';
+import 'package:vocara/core/database/database_provider.dart';
+import 'package:vocara/core/time/clock.dart';
 
 import 'fake_ai.dart';
 import 'fake_audio.dart';

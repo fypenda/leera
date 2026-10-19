@@ -1,6 +1,6 @@
-import 'package:elora/core/common/widgets/edge_swipe_back.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocara/core/common/widgets/edge_swipe_back.dart';
 
 void main() {
   Future<int> swipe(

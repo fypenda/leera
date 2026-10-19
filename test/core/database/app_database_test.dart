@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:elora/core/database/app_database.dart';
-import 'package:elora/core/database/database_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocara/core/database/app_database.dart';
+import 'package:vocara/core/database/database_provider.dart';
 
 // These tests are about the database itself rather than any table of the
 // app, so they write to a scratch table created with raw SQL. It exists only in the test's own database and is not
