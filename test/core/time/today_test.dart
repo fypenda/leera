@@ -2,9 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocara/core/time/calendar_date.dart';
-import 'package:vocara/core/time/clock.dart';
-import 'package:vocara/core/time/today.dart';
+import 'package:leera/core/time/calendar_date.dart';
+import 'package:leera/core/time/clock.dart';
+import 'package:leera/core/time/today.dart';
 
 import '../../support/fake_clock.dart';
 

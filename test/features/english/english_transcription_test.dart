@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocara/app/router.dart';
-import 'package:vocara/core/audio/transcriber.dart';
-import 'package:vocara/features/english/data/backend_feedback_api.dart';
-import 'package:vocara/features/english/data/practice_session_repository_provider.dart';
-import 'package:vocara/features/english/domain/practice_session.dart';
-import 'package:vocara/features/english/domain/restitution_format.dart';
-import 'package:vocara/features/english/english_routes.dart';
+import 'package:leera/app/router.dart';
+import 'package:leera/core/audio/transcriber.dart';
+import 'package:leera/features/english/data/backend_feedback_api.dart';
+import 'package:leera/features/english/data/practice_session_repository_provider.dart';
+import 'package:leera/features/english/domain/practice_session.dart';
+import 'package:leera/features/english/domain/restitution_format.dart';
+import 'package:leera/features/english/english_routes.dart';
 
 import '../../support/fake_ai.dart';
 import '../../support/fake_audio.dart';

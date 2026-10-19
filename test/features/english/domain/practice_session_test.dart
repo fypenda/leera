@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocara/features/english/domain/practice_session.dart';
-import 'package:vocara/features/english/domain/restitution_format.dart';
+import 'package:leera/features/english/domain/practice_session.dart';
+import 'package:leera/features/english/domain/restitution_format.dart';
 
 final _start = DateTime.utc(2026, 10, 5, 9);
 final _later = DateTime.utc(2026, 10, 5, 9, 30);

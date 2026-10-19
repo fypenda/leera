@@ -1,6 +1,8 @@
-# Vocara
+# Leera
 
 **Fluency through real topics.**
+
+*Leera*, from the Wolof *leer*: clarity, light.
 
 Speak about any topic in English, then get it corrected.
 
@@ -41,8 +43,8 @@ The backend: see [`backend/README.md`](backend/README.md).
 
 ## Still to do before the App Store
 
-- Reserve the name Vocara in App Store Connect, then set the final bundle
-  id (provisionally `dev.penda.vocara`). The backend still uses the
+- Reserve the name Leera in App Store Connect, then set the final bundle
+  id (provisionally `dev.penda.leera`). The backend still uses the
   `com.penda.nourish` package and `NOURISH_*` variables.
 - New icon and launch screen: `assets/brand/`, `ios/Runner/Assets.xcassets`
   and `ios/Runner/Base.lproj/LaunchScreen.storyboard` still show NOURISH.

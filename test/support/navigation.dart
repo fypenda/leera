@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocara/app/app.dart';
-import 'package:vocara/app/router.dart';
-import 'package:vocara/features/english/english_routes.dart';
+import 'package:leera/app/app.dart';
+import 'package:leera/app/router.dart';
+import 'package:leera/features/english/english_routes.dart';
 
 import 'pump_app.dart';
 

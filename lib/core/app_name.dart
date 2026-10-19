@@ -3,4 +3,4 @@
 /// When it changes, also change
 /// `CFBundleDisplayName` and the usage descriptions in
 /// `ios/Runner/Info.plist`.
-const appName = 'Vocara';
+const appName = 'Leera';

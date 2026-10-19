@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocara/core/time/calendar_date.dart';
-import 'package:vocara/features/english/domain/practice_session.dart';
-import 'package:vocara/features/english/domain/practice_stats.dart';
-import 'package:vocara/features/english/domain/restitution_format.dart';
+import 'package:leera/core/time/calendar_date.dart';
+import 'package:leera/features/english/domain/practice_session.dart';
+import 'package:leera/features/english/domain/practice_stats.dart';
+import 'package:leera/features/english/domain/restitution_format.dart';
 
 /// A session completed at noon, local time, on [day] of October 2026.
 PracticeSession _completedOn(int day, {String? id}) {

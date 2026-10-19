@@ -2,8 +2,8 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
-/// The name of the app's database; its file is `vocara.sqlite`.
-const appDatabaseName = 'vocara';
+/// The name of the app's database; its file is `leera.sqlite`.
+const appDatabaseName = 'leera';
 
 /// Opens an on-device database file, by default the app's own.
 ///

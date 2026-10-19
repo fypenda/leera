@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocara/core/time/calendar_date.dart';
-import 'package:vocara/features/english/domain/feedback_history.dart';
-import 'package:vocara/features/english/domain/session_feedback.dart';
+import 'package:leera/core/time/calendar_date.dart';
+import 'package:leera/features/english/domain/feedback_history.dart';
+import 'package:leera/features/english/domain/session_feedback.dart';
 
 import '../../../support/fake_ai.dart';
 

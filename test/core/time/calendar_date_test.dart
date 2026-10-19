@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocara/core/time/calendar_date.dart';
+import 'package:leera/core/time/calendar_date.dart';
 
 void main() {
   weekTests();
