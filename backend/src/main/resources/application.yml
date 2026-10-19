@@ -4,18 +4,32 @@ spring:
   mvc:
     problemdetails:
       enabled: false
+  datasource:
+    url: ${LEERA_DATABASE_URL:jdbc:postgresql://localhost:5432/leera}
+    username: ${LEERA_DATABASE_USER:leera}
+    password: ${LEERA_DATABASE_PASSWORD:leera}
 
 server:
   port: ${PORT:8080}
 
 leera:
-  # Secrets: environment only, never committed.
-  app-token: ${LEERA_APP_TOKEN:}
   anthropic:
+    # Secret: environment only, never committed.
     api-key: ${ANTHROPIC_API_KEY:}
     base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com}
     model: ${LEERA_MODEL:claude-sonnet-5-5}
     max-tokens: 4096
     timeout: 90s
   rate-limit:
-    requests-per-hour: ${LEERA_REQUESTS_PER_HOUR:60}
+    # A ceiling for the whole backend, whoever asks: the last guard on the bill.
+    requests-per-hour: ${LEERA_REQUESTS_PER_HOUR:600}
+  auth:
+    # Secret: environment only, at least 32 characters (openssl rand -hex 32).
+    session-secret: ${LEERA_SESSION_SECRET:}
+    session-lifetime: 30d
+    # The app's bundle id: Apple writes it in the identity token.
+    apple-audiences: ${LEERA_APPLE_AUDIENCES:dev.penda.leera}
+    apple-keys-url: https://appleid.apple.com/auth/keys
+  quota:
+    free-per-week: ${LEERA_FREE_PER_WEEK:1}
+    plus-per-day: ${LEERA_PLUS_PER_DAY:3}

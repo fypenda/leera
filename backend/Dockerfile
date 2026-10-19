@@ -13,5 +13,5 @@ RUN useradd --system --uid 1001 leera
 COPY --from=build /src/target/leera-backend-*.jar app.jar
 USER leera
 EXPOSE 8080
-# LEERA_APP_TOKEN and ANTHROPIC_API_KEY are required at run time.
+# ANTHROPIC_API_KEY, LEERA_SESSION_SECRET and LEERA_DATABASE_* are needed at run time.
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

@@ -12,28 +12,35 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.penda.leera.account.Account;
+import com.penda.leera.account.AccountRepository;
 import com.penda.leera.ai.AiClient;
 import com.penda.leera.ai.AiException;
-import com.penda.leera.security.AppTokenFilter;
+import com.penda.leera.auth.SessionTokens;
+import com.penda.leera.support.TestSessions;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class EnglishApiTest {
 
-    private static final String TOKEN = "test-token";
-
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
+    @Autowired AccountRepository accounts;
+    @Autowired SessionTokens sessions;
     @MockitoBean AiClient ai;
 
     private static final String REQUEST =
@@ -56,10 +63,25 @@ class EnglishApiTest {
              "vocabulary": [], "followUpQuestions": [], "recurringMistakesSeen": []}
             """;
 
+    private Account account;
+    private String bearer;
+
     @BeforeEach
     void setUp() throws Exception {
         when(ai.model()).thenReturn("claude-test");
         when(ai.completeJson(anyString(), anyString(), any())).thenReturn(mapper.readTree(ANSWER));
+        account = TestSessions.newAccount(accounts);
+        bearer = TestSessions.bearer(sessions, account);
+    }
+
+    private ResultActions askFeedback(String authorization, String body) throws Exception {
+        var request = post("/api/v1/english/feedback")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body);
+        if (authorization != null) {
+            request.header(HttpHeaders.AUTHORIZATION, authorization);
+        }
+        return mvc.perform(request);
     }
 
     @Test
@@ -70,34 +92,27 @@ class EnglishApiTest {
     }
 
     @Test
-    void pingNeedsTheToken() throws Exception {
-        mvc.perform(get("/api/v1/ping")).andExpect(status().isUnauthorized());
-        mvc.perform(get("/api/v1/ping").header(AppTokenFilter.HEADER, TOKEN))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void feedbackIsRefusedWithoutTheRightToken() throws Exception {
-        mvc.perform(post("/api/v1/english/feedback")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(REQUEST))
+    void feedbackIsRefusedWithoutAValidSession() throws Exception {
+        askFeedback(null, REQUEST)
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("unauthorized"));
-        mvc.perform(post("/api/v1/english/feedback")
-                        .header(AppTokenFilter.HEADER, "wrong")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(REQUEST))
-                .andExpect(status().isUnauthorized());
+        askFeedback("Bearer forged.token.value", REQUEST).andExpect(status().isUnauthorized());
+        askFeedback("Basic abc", REQUEST).andExpect(status().isUnauthorized());
 
         verify(ai, never()).completeJson(anyString(), anyString(), any());
     }
 
     @Test
+    void aSessionStopsWorkingOnceItsAccountIsDeleted() throws Exception {
+        accounts.delete(account.id());
+
+        askFeedback(bearer, REQUEST).andExpect(status().isUnauthorized());
+        verify(ai, never()).completeJson(anyString(), anyString(), any());
+    }
+
+    @Test
     void aPresentationIsCorrected() throws Exception {
-        mvc.perform(post("/api/v1/english/feedback")
-                        .header(AppTokenFilter.HEADER, TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(REQUEST))
+        askFeedback(bearer, REQUEST)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.promptVersion").value(FeedbackService.PROMPT_VERSION))
                 .andExpect(jsonPath("$.model").value("claude-test"))
@@ -108,31 +123,48 @@ class EnglishApiTest {
     }
 
     @Test
-    void anInvalidRequestNamesItsFieldsButNotTheirContent() throws Exception {
-        mvc.perform(post("/api/v1/english/feedback")
-                        .header(AppTokenFilter.HEADER, TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"topicTitle\": \"\", \"formatLabel\": \"Essay\"}"))
+    void theFreePlanAllowsOneCorrectionAWeek() throws Exception {
+        askFeedback(bearer, REQUEST).andExpect(status().isOk());
+
+        askFeedback(bearer, REQUEST)
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("quota_exceeded"));
+        mvc.perform(get("/api/v1/me").header(HttpHeaders.AUTHORIZATION, bearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quota.plan").value("free"))
+                .andExpect(jsonPath("$.quota.used").value(1))
+                .andExpect(jsonPath("$.quota.limit").value(1));
+    }
+
+    @Test
+    void leeraPlusAllowsThreeADay() throws Exception {
+        accounts.setPlusUntil(account.id(), Instant.now().plus(30, ChronoUnit.DAYS));
+
+        for (int i = 0; i < 3; i++) {
+            askFeedback(bearer, REQUEST).andExpect(status().isOk());
+        }
+        askFeedback(bearer, REQUEST)
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("quota_exceeded"));
+    }
+
+    @Test
+    void anInvalidRequestIsNotCounted() throws Exception {
+        askFeedback(bearer, "{\"topicTitle\": \"\", \"formatLabel\": \"Essay\"}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("invalid_request"))
                 .andExpect(jsonPath("$.message").value(
                         org.hamcrest.Matchers.containsString("presentation")));
+        askFeedback(bearer, "not json").andExpect(status().isBadRequest());
 
-        mvc.perform(post("/api/v1/english/feedback")
-                        .header(AppTokenFilter.HEADER, TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("not json"))
-                .andExpect(status().isBadRequest());
+        askFeedback(bearer, REQUEST).andExpect(status().isOk());
     }
 
     @Test
-    void failuresOfTheModelHaveTheirOwnCodes() throws Exception {
+    void failuresOfTheModelHaveTheirOwnCodesAndAreNotCounted() throws Exception {
         when(ai.completeJson(anyString(), anyString(), any()))
                 .thenThrow(new AiException(AiException.Kind.UNAVAILABLE, "down"));
-        mvc.perform(post("/api/v1/english/feedback")
-                        .header(AppTokenFilter.HEADER, TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(REQUEST))
+        askFeedback(bearer, REQUEST)
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value("ai_unavailable"));
 
@@ -140,11 +172,12 @@ class EnglishApiTest {
         doThrow(new AiException(AiException.Kind.REFUSED, "no"))
                 .when(ai)
                 .completeJson(anyString(), anyString(), any());
-        mvc.perform(post("/api/v1/english/feedback")
-                        .header(AppTokenFilter.HEADER, TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(REQUEST))
+        askFeedback(bearer, REQUEST)
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("ai_refused"));
+
+        // Neither used up the free correction of the week.
+        mvc.perform(get("/api/v1/me").header(HttpHeaders.AUTHORIZATION, bearer))
+                .andExpect(jsonPath("$.quota.used").value(0));
     }
 }

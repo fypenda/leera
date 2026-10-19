@@ -1,6 +1,9 @@
 package com.penda.leera.error;
 
+import com.penda.leera.account.QuotaExceededException;
+import com.penda.leera.account.QuotaService;
 import com.penda.leera.ai.AiException;
+import com.penda.leera.auth.AuthException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -58,6 +61,28 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     ResponseEntity<ApiError> notFound(NoResourceFoundException e) {
         return respond(HttpStatus.NOT_FOUND, "not_found", "There is nothing here.");
+    }
+
+    @ExceptionHandler(AuthException.class)
+    ResponseEntity<ApiError> auth(AuthException e) {
+        return respond(HttpStatus.UNAUTHORIZED, e.code(), e.getMessage());
+    }
+
+    /** The app reads {@code GET /api/v1/me} to say when the quota starts again. */
+    @ExceptionHandler(QuotaExceededException.class)
+    ResponseEntity<ApiError> quota(QuotaExceededException e) {
+        var status = e.status();
+        String period = status.plan() == QuotaService.Plan.PLUS
+                ? "today"
+                : "this week";
+        return respond(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "quota_exceeded",
+                "You have used your "
+                        + (status.limit() == 1 ? "correction" : status.limit() + " corrections")
+                        + " for "
+                        + period
+                        + ".");
     }
 
     @ExceptionHandler(AiException.class)

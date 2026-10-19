@@ -5,11 +5,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.penda.leera.account.AccountRepository;
 import com.penda.leera.ai.AiClient;
+import com.penda.leera.auth.SessionTokens;
+import com.penda.leera.support.TestSessions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,24 +24,27 @@ import org.springframework.test.web.servlet.MockMvc;
 class RateLimitTest {
 
     @Autowired MockMvc mvc;
+    @Autowired AccountRepository accounts;
+    @Autowired SessionTokens sessions;
     @MockitoBean AiClient ai;
 
     @Test
     void authenticatedRequestsAreCappedPerHourAndRefusedOnesDoNotCount() throws Exception {
-        // Refused for their token: they use nothing up.
+        // Refused for their session: they use nothing up.
         for (int i = 0; i < 5; i++) {
-            mvc.perform(get("/api/v1/ping")).andExpect(status().isUnauthorized());
+            mvc.perform(get("/api/v1/me")).andExpect(status().isUnauthorized());
         }
         // The health check is never limited.
         for (int i = 0; i < 5; i++) {
             mvc.perform(get("/api/v1/health")).andExpect(status().isOk());
         }
 
-        mvc.perform(get("/api/v1/ping").header(AppTokenFilter.HEADER, "test-token"))
+        String bearer = TestSessions.bearer(sessions, TestSessions.newAccount(accounts));
+        mvc.perform(get("/api/v1/me").header(HttpHeaders.AUTHORIZATION, bearer))
                 .andExpect(status().isOk());
-        mvc.perform(get("/api/v1/ping").header(AppTokenFilter.HEADER, "test-token"))
+        mvc.perform(get("/api/v1/me").header(HttpHeaders.AUTHORIZATION, bearer))
                 .andExpect(status().isOk());
-        mvc.perform(get("/api/v1/ping").header(AppTokenFilter.HEADER, "test-token"))
+        mvc.perform(get("/api/v1/me").header(HttpHeaders.AUTHORIZATION, bearer))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().string("Retry-After", "3600"))
                 .andExpect(jsonPath("$.code").value("rate_limited"));

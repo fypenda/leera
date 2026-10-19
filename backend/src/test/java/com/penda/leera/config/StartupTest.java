@@ -14,6 +14,9 @@ import org.springframework.context.annotation.Configuration;
 /** The backend refuses to start without its secrets, rather than run unprotected. */
 class StartupTest {
 
+    private static final String SECRET = "leera.auth.session-secret=0123456789abcdef0123456789abcdef";
+    private static final String API_KEY = "leera.anthropic.api-key=k";
+
     @Configuration
     @EnableConfigurationProperties(LeeraProperties.class)
     static class PropertiesOnly {}
@@ -30,23 +33,34 @@ class StartupTest {
                             "leera.anthropic.model=claude-test",
                             "leera.anthropic.max-tokens=1024",
                             "leera.anthropic.timeout=5s",
-                            "leera.rate-limit.requests-per-hour=10");
+                            "leera.rate-limit.requests-per-hour=10",
+                            "leera.auth.session-lifetime=30d",
+                            "leera.auth.apple-audiences=dev.penda.leera",
+                            "leera.auth.apple-keys-url=https://appleid.apple.com/auth/keys",
+                            "leera.quota.free-per-week=1",
+                            "leera.quota.plus-per-day=3");
 
     @Test
     void startsWithBothSecrets() {
-        runner.withPropertyValues("leera.app-token=t", "leera.anthropic.api-key=k")
+        runner.withPropertyValues(SECRET, API_KEY)
                 .run(context -> assertThat(context).hasNotFailed());
     }
 
     @Test
-    void refusesToStartWithoutTheAppToken() {
-        runner.withPropertyValues("leera.app-token=", "leera.anthropic.api-key=k")
+    void refusesToStartWithoutASessionSecret() {
+        runner.withPropertyValues("leera.auth.session-secret=", API_KEY)
+                .run(context -> assertThat(context).hasFailed());
+    }
+
+    @Test
+    void refusesToStartWithAShortSessionSecret() {
+        runner.withPropertyValues("leera.auth.session-secret=too-short", API_KEY)
                 .run(context -> assertThat(context).hasFailed());
     }
 
     @Test
     void refusesToStartWithoutTheApiKey() {
-        runner.withPropertyValues("leera.app-token=t", "leera.anthropic.api-key=")
+        runner.withPropertyValues(SECRET, "leera.anthropic.api-key=")
                 .run(context -> assertThat(context).hasFailed());
     }
 

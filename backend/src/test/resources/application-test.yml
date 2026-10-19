@@ -1,5 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:leera;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+
 leera:
-  app-token: test-token
   anthropic:
     api-key: test-key
     base-url: http://localhost:9
@@ -8,3 +13,11 @@ leera:
     timeout: 5s
   rate-limit:
     requests-per-hour: 1000
+  auth:
+    session-secret: test-secret-that-is-long-enough-0123456789
+    session-lifetime: 30d
+    apple-audiences: dev.penda.leera
+    apple-keys-url: http://localhost:9/keys
+  quota:
+    free-per-week: 1
+    plus-per-day: 3

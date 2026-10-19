@@ -14,13 +14,4 @@ public class StatusController {
     Map<String, String> health() {
         return Map.of("status", "ok");
     }
-
-    /**
-     * Behind the app token: lets the app check its settings without calling the model, which
-     * costs nothing.
-     */
-    @GetMapping("/ping")
-    Map<String, String> ping() {
-        return Map.of("status", "ok");
-    }
 }

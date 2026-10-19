@@ -19,9 +19,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 /**
  * Caps authenticated requests per hour, for the whole backend.
  *
- * <p>There is one user, so one counter. It is a ceiling on the AI bill if the app token ever
- * leaks, not a fairness mechanism. It runs after {@link AppTokenFilter}, so refused requests do
- * not use it up. The count is kept in memory and starts again when the backend restarts.
+ * <p>One counter for everyone: the last guard on the AI bill if something goes wrong, not a
+ * fairness mechanism (each account's quota is that). It runs after {@link SessionFilter}, so
+ * refused requests do not use it up. The count is kept in memory and starts again when the
+ * backend restarts.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
@@ -44,7 +45,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !AppTokenFilter.isProtected(request);
+        return !SessionFilter.isProtected(request);
     }
 
     @Override
