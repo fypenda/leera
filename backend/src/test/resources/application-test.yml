@@ -1,0 +1,10 @@
+nourish:
+  app-token: test-token
+  anthropic:
+    api-key: test-key
+    base-url: http://localhost:9
+    model: claude-test
+    max-tokens: 1024
+    timeout: 5s
+  rate-limit:
+    requests-per-hour: 1000

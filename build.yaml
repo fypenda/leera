@@ -1,0 +1,10 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # The database that `dart run drift_dev make-migrations` snapshots.
+          # Snapshots go to drift_schemas/, generated test helpers to
+          # test/drift/ (both are the tool's defaults).
+          databases:
+            app: lib/core/database/app_database.dart

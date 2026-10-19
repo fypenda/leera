@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  The launch page from the Growth App design (Splash): the cream background,
+  a peach circle top left, a teal one bottom right, the logo with NOURISH and
+  the tagline in the middle, and three dots near the bottom.
+  The images are in Assets.xcassets (Launch*.imageset); they are rendered
+  from assets/brand/logo.svg.
+-->
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12121" systemVersion="16G29" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12089"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="EHf-IW-A2E">
+            <objects>
+                <viewController id="01J-lp-oVM" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="Ydg-fD-yQy"/>
+                        <viewControllerLayoutGuide type="bottom" id="xbc-2k-c8Z"/>
+                    </layoutGuides>
+                    <view key="view" clipsSubviews="YES" contentMode="scaleToFill" id="Ze5-6b-2t3">
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="center" image="LaunchBlobPeach" translatesAutoresizingMaskIntoConstraints="NO" id="pch-B1-o0b">
+                            </imageView>
+                            <imageView userInteractionEnabled="NO" contentMode="center" image="LaunchBlobTeal" translatesAutoresizingMaskIntoConstraints="NO" id="tel-B2-o0b">
+                            </imageView>
+                            <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" image="LaunchImage" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-Ey4">
+                            </imageView>
+                            <imageView userInteractionEnabled="NO" contentMode="center" image="LaunchDots" translatesAutoresizingMaskIntoConstraints="NO" id="dts-D3-o0b">
+                            </imageView>
+                        </subviews>
+                        <color key="backgroundColor" red="0.98431372549019602" green="0.94117647058823528" blue="0.90588235294117647" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="1a2-6s-vTC"/>
+                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="4X2-HB-R7a"/>
+                            <constraint firstItem="pch-B1-o0b" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" constant="-90" id="pch-C1-lea"/>
+                            <constraint firstItem="pch-B1-o0b" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" constant="-90" id="pch-C2-top"/>
+                            <constraint firstItem="tel-B2-o0b" firstAttribute="trailing" secondItem="Ze5-6b-2t3" secondAttribute="trailing" constant="110" id="tel-C1-tra"/>
+                            <constraint firstItem="tel-B2-o0b" firstAttribute="bottom" secondItem="Ze5-6b-2t3" secondAttribute="bottom" constant="70" id="tel-C2-bot"/>
+                            <constraint firstItem="dts-D3-o0b" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="dts-C1-cen"/>
+                            <constraint firstItem="Ze5-6b-2t3" firstAttribute="bottom" secondItem="dts-D3-o0b" secondAttribute="bottom" constant="72" id="dts-C2-bot"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="53" y="375"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="LaunchImage" width="242" height="279"/>
+        <image name="LaunchBlobPeach" width="260" height="260"/>
+        <image name="LaunchBlobTeal" width="300" height="300"/>
+        <image name="LaunchDots" width="46" height="10"/>
+    </resources>
+</document>

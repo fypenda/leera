@@ -1,0 +1,72 @@
+{
+  "type": "object",
+  "properties": {
+    "estimatedLevel": {
+      "type": "string",
+      "enum": ["A2", "B1", "B1+", "B2", "B2+", "C1", "C1+", "C2"]
+    },
+    "headline": { "type": "string" },
+    "summary": { "type": "string" },
+    "scores": {
+      "type": "object",
+      "properties": {
+        "grammar": { "type": "integer" },
+        "vocabulary": { "type": "integer" },
+        "naturalness": { "type": "integer" },
+        "structure": { "type": "integer" },
+        "content": { "type": "integer" }
+      },
+      "required": ["grammar", "vocabulary", "naturalness", "structure", "content"],
+      "additionalProperties": false
+    },
+    "corrections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string", "enum": ["grammar", "naturalness"] },
+          "original": { "type": "string" },
+          "corrected": { "type": "string" },
+          "mistake": { "type": "string" },
+          "fix": { "type": "string" },
+          "explanation": { "type": "string" },
+          "tag": { "type": "string" }
+        },
+        "required": ["kind", "original", "corrected", "mistake", "fix", "explanation", "tag"],
+        "additionalProperties": false
+      }
+    },
+    "vocabulary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "expression": { "type": "string" },
+          "meaning": { "type": "string" },
+          "example": { "type": "string" }
+        },
+        "required": ["expression", "meaning", "example"],
+        "additionalProperties": false
+      }
+    },
+    "followUpQuestions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "recurringMistakesSeen": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": [
+    "estimatedLevel",
+    "headline",
+    "summary",
+    "scores",
+    "corrections",
+    "vocabulary",
+    "followUpQuestions",
+    "recurringMistakesSeen"
+  ],
+  "additionalProperties": false
+}
