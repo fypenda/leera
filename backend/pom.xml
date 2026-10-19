@@ -11,11 +11,11 @@
     <relativePath/>
   </parent>
 
-  <groupId>com.penda.nourish</groupId>
-  <artifactId>nourish-backend</artifactId>
+  <groupId>com.penda.leera</groupId>
+  <artifactId>leera-backend</artifactId>
   <version>0.1.0</version>
-  <name>nourish-backend</name>
-  <description>AI gateway for the Nourish app: corrects English presentations with Claude.</description>
+  <name>leera-backend</name>
+  <description>AI gateway for the Leera app: corrects English presentations with Claude.</description>
 
   <properties>
     <java.version>21</java.version>

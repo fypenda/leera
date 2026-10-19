@@ -13,8 +13,8 @@ Requires Java 21 and Maven (`brew install maven`).
 ```sh
 cd backend
 export ANTHROPIC_API_KEY=sk-ant-...        # from console.anthropic.com
-export NOURISH_APP_TOKEN=$(openssl rand -hex 32)
-echo $NOURISH_APP_TOKEN                     # enter it in the app's AI settings
+export LEERA_APP_TOKEN=$(openssl rand -hex 32)
+echo $LEERA_APP_TOKEN                     # enter it in the app's AI settings
 mvn spring-boot:run
 ```
 
@@ -22,7 +22,7 @@ The backend refuses to start without both values. Check it:
 
 ```sh
 curl localhost:8080/api/v1/health                                  # {"status":"ok"}
-curl -H "X-App-Token: $NOURISH_APP_TOKEN" localhost:8080/api/v1/ping
+curl -H "X-App-Token: $LEERA_APP_TOKEN" localhost:8080/api/v1/ping
 ```
 
 In the iPad simulator, the app reaches it at `http://localhost:8080`. On a
@@ -41,10 +41,10 @@ No test calls Anthropic: the model is replaced by a mock server or a fake.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `NOURISH_APP_TOKEN` | none, required | Secret the app sends in `X-App-Token` |
+| `LEERA_APP_TOKEN` | none, required | Secret the app sends in `X-App-Token` |
 | `ANTHROPIC_API_KEY` | none, required | Anthropic API key |
-| `NOURISH_MODEL` | `claude-sonnet-5-5` | Model used for corrections |
-| `NOURISH_REQUESTS_PER_HOUR` | `60` | Ceiling on authenticated requests |
+| `LEERA_MODEL` | `claude-sonnet-5-5` | Model used for corrections |
+| `LEERA_REQUESTS_PER_HOUR` | `60` | Ceiling on authenticated requests |
 | `ANTHROPIC_BASE_URL` | `https://api.anthropic.com` | Changed only for tests |
 | `PORT` | `8080` | HTTP port |
 
@@ -123,7 +123,7 @@ EnglishController → FeedbackService → AiClient (interface) → AnthropicAiCl
 - The Anthropic key lives in the backend's environment only.
 - Every `/api/` path except the health check needs `X-App-Token`, compared in
   constant time.
-- At most `NOURISH_REQUESTS_PER_HOUR` authenticated requests per hour, so a
+- At most `LEERA_REQUESTS_PER_HOUR` authenticated requests per hour, so a
   leaked token cannot run up an unlimited bill. Refused requests do not count.
   The counter is in memory and resets on restart.
 - Nothing is stored and presentations are not logged.
@@ -131,9 +131,9 @@ EnglishController → FeedbackService → AiClient (interface) → AnthropicAiCl
 ## Deploy
 
 ```sh
-docker build -t nourish-backend .
+docker build -t leera-backend .
 docker run -p 8080:8080 \
-  -e ANTHROPIC_API_KEY -e NOURISH_APP_TOKEN nourish-backend
+  -e ANTHROPIC_API_KEY -e LEERA_APP_TOKEN leera-backend
 ```
 
 Any host that runs a container works (Render, Railway, Fly.io, a small VPS).

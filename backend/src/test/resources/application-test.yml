@@ -1,4 +1,4 @@
-nourish:
+leera:
   app-token: test-token
   anthropic:
     api-key: test-key

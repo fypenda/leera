@@ -9,9 +9,9 @@ RUN mvn -q -B package -DskipTests
 # Run
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-RUN useradd --system --uid 1001 nourish
-COPY --from=build /src/target/nourish-backend-*.jar app.jar
-USER nourish
+RUN useradd --system --uid 1001 leera
+COPY --from=build /src/target/leera-backend-*.jar app.jar
+USER leera
 EXPOSE 8080
-# NOURISH_APP_TOKEN and ANTHROPIC_API_KEY are required at run time.
+# LEERA_APP_TOKEN and ANTHROPIC_API_KEY are required at run time.
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
