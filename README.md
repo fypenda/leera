@@ -46,8 +46,8 @@ The backend: see [`backend/README.md`](backend/README.md).
 - Reserve the name Leera in App Store Connect, then set the final bundle
   id (provisionally `dev.penda.leera`). The backend still uses the
   `com.penda.nourish` package and `NOURISH_*` variables.
-- New icon and launch screen: `assets/brand/`, `ios/Runner/Assets.xcassets`
-  and `ios/Runner/Base.lproj/LaunchScreen.storyboard` still show NOURISH.
+- Bring the screens in line with the Leera design canvas (Today with the
+  week and streak, Topic, Speak, Write, Feedback, Progress, Leera Plus).
 - Replace the AI settings page (backend address and token typed by hand) by a
   built-in backend address and per-user authentication, with quotas.
 - Onboarding (level, interests), a larger topic bank, streak, paywall

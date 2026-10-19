@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
-  The launch page from the Growth App design (Splash): the cream background,
-  a peach circle top left, a teal one bottom right, the logo with NOURISH and
-  the tagline in the middle, and three dots near the bottom.
-  The images are in Assets.xcassets (Launch*.imageset); they are rendered
-  from assets/brand/logo.svg.
+  The launch page from the Leera design (Splash): the cream background,
+  a peach circle top left, a teal one bottom right, the logo, the wordmark
+  and the tagline in the middle, and three rising bars near the bottom.
+  The images are in Assets.xcassets (Launch*.imageset); LaunchImage and
+  LaunchDots are rendered from assets/brand by scripts/render_brand.mjs.
 -->
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12121" systemVersion="16G29" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
     <dependencies>
@@ -51,9 +51,9 @@
         </scene>
     </scenes>
     <resources>
-        <image name="LaunchImage" width="242" height="279"/>
+        <image name="LaunchImage" width="260" height="300"/>
         <image name="LaunchBlobPeach" width="260" height="260"/>
         <image name="LaunchBlobTeal" width="300" height="300"/>
-        <image name="LaunchDots" width="46" height="10"/>
+        <image name="LaunchDots" width="31" height="26"/>
     </resources>
 </document>

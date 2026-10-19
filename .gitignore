@@ -68,3 +68,6 @@ tmp/
 *.mobileprovision
 key.properties
 secrets.json
+
+# Node (scripts/render_brand.mjs)
+node_modules/
