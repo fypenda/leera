@@ -1,4 +1,4 @@
-import 'package:english_practice/core/time/date_formatting.dart';
+import 'package:elora/core/time/date_formatting.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

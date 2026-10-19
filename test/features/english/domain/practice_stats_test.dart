@@ -1,7 +1,7 @@
-import 'package:english_practice/core/time/calendar_date.dart';
-import 'package:english_practice/features/english/domain/practice_session.dart';
-import 'package:english_practice/features/english/domain/practice_stats.dart';
-import 'package:english_practice/features/english/domain/restitution_format.dart';
+import 'package:elora/core/time/calendar_date.dart';
+import 'package:elora/features/english/domain/practice_session.dart';
+import 'package:elora/features/english/domain/practice_stats.dart';
+import 'package:elora/features/english/domain/restitution_format.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// A session completed at noon, local time, on [day] of October 2026.

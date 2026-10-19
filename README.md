@@ -1,4 +1,4 @@
-# English Practice (provisional name)
+# Elora
 
 Speak about any topic in English, then get it corrected.
 
@@ -39,11 +39,9 @@ The backend: see [`backend/README.md`](backend/README.md).
 
 ## Still to do before the App Store
 
-- Choose the final name, then rename it everywhere: `lib/core/app_name.dart`,
-  `name:` in `pubspec.yaml` (and the `package:` imports), `CFBundleDisplayName`
-  and the usage descriptions in `ios/Runner/Info.plist`, the bundle id
-  (`dev.penda.englishpractice` in `ios/Runner.xcodeproj/project.pbxproj`),
-  and the backend's `com.penda.nourish` package and `NOURISH_*` variables.
+- Check that the name Elora is free on the App Store, then set the final
+  bundle id (provisionally `dev.penda.elora`). The backend still uses the
+  `com.penda.nourish` package and `NOURISH_*` variables.
 - New icon and launch screen: `assets/brand/`, `ios/Runner/Assets.xcassets`
   and `ios/Runner/Base.lproj/LaunchScreen.storyboard` still show NOURISH.
 - Replace the AI settings page (backend address and token typed by hand) by a

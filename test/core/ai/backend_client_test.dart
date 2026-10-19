@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:english_practice/core/ai/ai_settings.dart';
-import 'package:english_practice/core/ai/backend_client.dart';
+import 'package:elora/core/ai/ai_settings.dart';
+import 'package:elora/core/ai/backend_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// A local server that answers every request with [status] and [body], and

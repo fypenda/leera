@@ -1,6 +1,6 @@
-import 'package:english_practice/core/time/calendar_date.dart';
-import 'package:english_practice/features/english/domain/feedback_history.dart';
-import 'package:english_practice/features/english/domain/session_feedback.dart';
+import 'package:elora/core/time/calendar_date.dart';
+import 'package:elora/features/english/domain/feedback_history.dart';
+import 'package:elora/features/english/domain/session_feedback.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_ai.dart';

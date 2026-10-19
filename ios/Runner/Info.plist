@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>English Practice</string>
+	<string>Elora</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>english_practice</string>
+	<string>elora</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,9 +27,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>English Practice turns your recorded English presentations into text so they can be corrected. On devices that support it, this happens on the device.</string>
+	<string>Elora turns your recorded English presentations into text so they can be corrected. On devices that support it, this happens on the device.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>English Practice records your spoken English presentations so you can listen to them again. Recordings stay on this device.</string>
+	<string>Elora records your spoken English presentations so you can listen to them again. Recordings stay on this device.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Lets the app reach a backend on the local network over HTTP

@@ -1,4 +1,4 @@
-import 'package:english_practice/core/common/widgets/edge_swipe_back.dart';
+import 'package:elora/core/common/widgets/edge_swipe_back.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

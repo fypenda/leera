@@ -1,9 +1,9 @@
 import 'dart:math';
 
-import 'package:english_practice/features/english/data/topic_catalog.dart';
-import 'package:english_practice/features/english/domain/practice_topic.dart';
-import 'package:english_practice/features/english/domain/restitution_format.dart';
-import 'package:english_practice/features/english/domain/session_draw.dart';
+import 'package:elora/features/english/data/topic_catalog.dart';
+import 'package:elora/features/english/domain/practice_topic.dart';
+import 'package:elora/features/english/domain/restitution_format.dart';
+import 'package:elora/features/english/domain/session_draw.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 PracticeTopic _topic(String id) => PracticeTopic(

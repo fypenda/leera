@@ -1,9 +1,9 @@
-import 'package:english_practice/core/ai/ai_settings.dart';
-import 'package:english_practice/core/ai/backend_client.dart';
-import 'package:english_practice/features/english/domain/feedback_api.dart';
-import 'package:english_practice/features/english/domain/practice_topic.dart';
-import 'package:english_practice/features/english/domain/restitution_format.dart';
-import 'package:english_practice/features/english/domain/session_feedback.dart';
+import 'package:elora/core/ai/ai_settings.dart';
+import 'package:elora/core/ai/backend_client.dart';
+import 'package:elora/features/english/domain/feedback_api.dart';
+import 'package:elora/features/english/domain/practice_topic.dart';
+import 'package:elora/features/english/domain/restitution_format.dart';
+import 'package:elora/features/english/domain/session_feedback.dart';
 
 /// AI settings kept in memory, in place of the Keychain.
 class InMemoryAiSettingsStore implements AiSettingsStore {

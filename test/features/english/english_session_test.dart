@@ -1,15 +1,15 @@
 import 'dart:math';
 
-import 'package:english_practice/app/router.dart';
-import 'package:english_practice/core/common/random_source.dart';
-import 'package:english_practice/features/english/data/practice_session_repository_provider.dart';
-import 'package:english_practice/features/english/data/topic_catalog.dart';
-import 'package:english_practice/features/english/domain/practice_session.dart';
-import 'package:english_practice/features/english/domain/restitution_format.dart';
-import 'package:english_practice/features/english/presentation/english_feedback_page.dart';
-import 'package:english_practice/features/english/presentation/english_page.dart';
-import 'package:english_practice/features/english/presentation/english_restitution_page.dart';
-import 'package:english_practice/features/english/presentation/english_topic_page.dart';
+import 'package:elora/app/router.dart';
+import 'package:elora/core/common/random_source.dart';
+import 'package:elora/features/english/data/practice_session_repository_provider.dart';
+import 'package:elora/features/english/data/topic_catalog.dart';
+import 'package:elora/features/english/domain/practice_session.dart';
+import 'package:elora/features/english/domain/restitution_format.dart';
+import 'package:elora/features/english/presentation/english_feedback_page.dart';
+import 'package:elora/features/english/presentation/english_page.dart';
+import 'package:elora/features/english/presentation/english_restitution_page.dart';
+import 'package:elora/features/english/presentation/english_topic_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

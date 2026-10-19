@@ -1,10 +1,10 @@
-import 'package:english_practice/app/router.dart';
-import 'package:english_practice/core/audio/transcriber.dart';
-import 'package:english_practice/features/english/data/backend_feedback_api.dart';
-import 'package:english_practice/features/english/data/practice_session_repository_provider.dart';
-import 'package:english_practice/features/english/domain/practice_session.dart';
-import 'package:english_practice/features/english/domain/restitution_format.dart';
-import 'package:english_practice/features/english/english_routes.dart';
+import 'package:elora/app/router.dart';
+import 'package:elora/core/audio/transcriber.dart';
+import 'package:elora/features/english/data/backend_feedback_api.dart';
+import 'package:elora/features/english/data/practice_session_repository_provider.dart';
+import 'package:elora/features/english/domain/practice_session.dart';
+import 'package:elora/features/english/domain/restitution_format.dart';
+import 'package:elora/features/english/english_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
