@@ -61,6 +61,7 @@ class FakeBackendClient extends BackendClient {
   Quota currentQuota;
   BackendFailure? signInFailure;
   final signIns = <({String identityToken, String nonce})>[];
+  final devSignIns = <String>[];
   var deletions = 0;
 
   @override
@@ -70,6 +71,12 @@ class FakeBackendClient extends BackendClient {
   }) async {
     signIns.add((identityToken: identityToken, nonce: nonce));
     if (signInFailure case final failure?) throw BackendException(failure);
+    return (session: testSession(), quota: currentQuota);
+  }
+
+  @override
+  Future<SignedIn> devSignIn(String name) async {
+    devSignIns.add(name);
     return (session: testSession(), quota: currentQuota);
   }
 

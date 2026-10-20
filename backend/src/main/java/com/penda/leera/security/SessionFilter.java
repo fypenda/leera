@@ -22,7 +22,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * Lets through only requests with a valid session in {@code Authorization: Bearer}, for an
  * account that still exists, and hands the account's id to the controllers.
  *
- * <p>Everything under {@code /api/} is protected except the health check and signing in.
+ * <p>Everything under {@code /api/} is protected except the health check and signing in
+ * (signing in without Apple only exists when {@code leera.auth.dev-sign-in} is on).
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
@@ -32,7 +33,8 @@ public class SessionFilter extends OncePerRequestFilter {
     public static final String ACCOUNT = "leera.account";
 
     private static final String BEARER = "Bearer ";
-    private static final Set<String> OPEN = Set.of("/api/v1/health", "/api/v1/auth/apple");
+    private static final Set<String> OPEN =
+            Set.of("/api/v1/health", "/api/v1/auth/apple", "/api/v1/auth/dev");
 
     private final SessionTokens sessions;
     private final AccountRepository accounts;

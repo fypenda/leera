@@ -90,6 +90,24 @@ class BackendClient {
       body: {'identityToken': identityToken, 'nonce': nonce},
       signedIn: false,
     );
+    return _signedIn(answer);
+  }
+
+  /// Opens a session without Apple, as the development account [name].
+  ///
+  /// Only a backend started with `LEERA_DEV_SIGN_IN=true` accepts it; the
+  /// app offers it in debug builds only.
+  Future<SignedIn> devSignIn(String name) async {
+    final answer = await _object(
+      'POST',
+      '/api/v1/auth/dev',
+      body: {'name': name},
+      signedIn: false,
+    );
+    return _signedIn(answer);
+  }
+
+  static SignedIn _signedIn(Map<String, Object?> answer) {
     try {
       final expiresAt = DateTime.tryParse('${answer['expiresAt']}');
       final token = answer['accessToken'];

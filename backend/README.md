@@ -56,6 +56,7 @@ keys by a key the tests generate, and PostgreSQL by H2.
 | `LEERA_DATABASE_URL` | `jdbc:postgresql://localhost:5432/leera` | PostgreSQL |
 | `LEERA_DATABASE_USER` / `LEERA_DATABASE_PASSWORD` | `leera` / `leera` | Its credentials |
 | `LEERA_APPLE_AUDIENCES` | `dev.penda.leera` | The app's bundle id(s), comma-separated |
+| `LEERA_DEV_SIGN_IN` | `false` | `true` opens signing in without Apple (below). Never in production |
 | `LEERA_FREE_PER_WEEK` | `1` | Corrections per week on the free plan |
 | `LEERA_PLUS_PER_DAY` | `3` | Corrections per day on Leera Plus |
 | `LEERA_MODEL` | `claude-sonnet-5-5` | Model used for corrections |
@@ -84,6 +85,20 @@ SHA-256 (hex), and sends the raw `nonce` here with Apple's `identityToken`.
 The backend checks the token against Apple's published keys, its issuer, its
 audience (`LEERA_APPLE_AUDIENCES`), its expiry and the nonce, then creates the
 account the first time. Sessions last 30 days.
+
+### Signing in without Apple, for development
+
+Before the Apple Developer account exists, Sign in with Apple cannot work.
+With `LEERA_DEV_SIGN_IN=true`, `POST /api/v1/auth/dev` with
+`{"name": "penda"}` (lower case, digits, `-`) opens the development account
+`dev:penda` and answers like `/auth/apple`. Debug builds of the app show a
+"Developer sign-in" button that uses it. Anyone who can reach the backend
+could open such an account, so this stays off in production; the backend
+logs a warning at start-up when it is on.
+
+```sh
+LEERA_DEV_SIGN_IN=true mvn spring-boot:run
+```
 
 Errors are `{"code": "...", "message": "..."}`. Codes: `unauthorized` (401:
 no session, or an expired or forged one, or a deleted account),

@@ -90,6 +90,21 @@ void main() {
     expect(signedIn.quota.remaining, 1);
   });
 
+  test('signing in without Apple sends only a name', () async {
+    backend.body =
+        '{"accessToken":"dev-token","expiresAt":"2026-11-18T10:00:00Z",'
+        '"quota":$_quotaJson}';
+
+    final signedIn = await BackendClient(
+      backend.url,
+      () async => null,
+    ).devSignIn('penda');
+
+    expect(backend.path, '/api/v1/auth/dev');
+    expect(backend.received, {'name': 'penda'});
+    expect(signedIn.session.accessToken, 'dev-token');
+  });
+
   test('a refused identity says so', () async {
     backend
       ..status = 401

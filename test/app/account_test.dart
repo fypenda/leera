@@ -69,6 +69,26 @@ void main() {
     expect(backend.signIns, isEmpty);
   });
 
+  appTest('debug builds can sign in without Apple', (tester) async {
+    final sessions = InMemorySessionStore();
+    final apple = FakeAppleSignIn();
+    final backend = FakeBackendClient();
+    await pumpEnglishApp(
+      tester,
+      iPhonePortrait,
+      sessions: sessions,
+      appleSignIn: apple,
+      backend: backend,
+    );
+
+    await _tap(tester, find.byKey(const ValueKey('sign-in-dev')));
+
+    expect(backend.devSignIns, ['dev']);
+    expect(apple.hashedNonces, isEmpty);
+    expect(sessions.session, isNotNull);
+    expect(find.byType(EnglishPage), findsOneWidget);
+  });
+
   appTest('a sign-in the backend refuses says so', (tester) async {
     final sessions = InMemorySessionStore();
     await pumpEnglishApp(

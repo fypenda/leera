@@ -24,10 +24,20 @@ class AuthActions {
     final signedIn = await _ref
         .read(backendClientProvider)
         .signInWithApple(identityToken: identityToken, nonce: nonce);
+    await _keep(signedIn);
+    return true;
+  }
+
+  /// Signs in without Apple, as a development account. Debug builds only,
+  /// against a backend started with `LEERA_DEV_SIGN_IN=true`.
+  Future<void> devSignIn({String name = 'dev'}) async {
+    await _keep(await _ref.read(backendClientProvider).devSignIn(name));
+  }
+
+  Future<void> _keep(SignedIn signedIn) async {
     await _ref.read(sessionStoreProvider).write(signedIn.session);
     _ref.invalidate(sessionProvider);
     _ref.invalidate(quotaProvider);
-    return true;
   }
 
   /// Forgets the session on this device. The account stays.

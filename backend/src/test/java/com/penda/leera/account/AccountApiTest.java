@@ -84,6 +84,16 @@ class AccountApiTest {
     }
 
     @Test
+    void signingInWithoutAppleIsOffByDefault() throws Exception {
+        mvc.perform(post("/api/v1/auth/dev")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"penda\"}"))
+                // No such endpoint: 404, or 405 from the static resources.
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.accessToken").doesNotExist());
+    }
+
+    @Test
     void theQuotaNeedsASession() throws Exception {
         mvc.perform(get("/api/v1/me"))
                 .andExpect(status().isUnauthorized())

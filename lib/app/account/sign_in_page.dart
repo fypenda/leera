@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -37,6 +38,31 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       if (mounted) {
         setState(
           () => _error = 'Sign in with Apple did not work. Try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Debug builds only: signs in without Apple, against a backend started
+  /// with `LEERA_DEV_SIGN_IN=true`.
+  Future<void> _devSignIn() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authActionsProvider).devSignIn();
+    } on BackendException catch (e) {
+      debugPrint('Developer sign-in failed: $e');
+      if (mounted) {
+        setState(
+          () => _error = e.failure == BackendFailure.unreachable
+              ? describeBackendFailure(e.failure)
+              : 'Developer sign-in is off on this backend. Start it with '
+                    'LEERA_DEV_SIGN_IN=true.',
         );
       }
     } finally {
@@ -129,6 +155,14 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                           style: textTheme.bodyMedium?.copyWith(
                             color: AppColors.coralStrong,
                           ),
+                        ),
+                      ],
+                      if (kDebugMode) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextButton(
+                          key: const ValueKey('sign-in-dev'),
+                          onPressed: _busy ? null : _devSignIn,
+                          child: const Text('Developer sign-in (debug only)'),
                         ),
                       ],
                       const SizedBox(height: AppSpacing.lg),

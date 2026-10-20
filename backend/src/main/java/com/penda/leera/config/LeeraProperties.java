@@ -43,12 +43,15 @@ public record LeeraProperties(
      * @param sessionLifetime how long a session lasts before the app must sign in again
      * @param appleAudiences the bundle ids Apple's identity tokens may be issued for
      * @param appleKeysUrl where Apple publishes the keys that sign its identity tokens
+     * @param devSignIn opens {@code POST /api/v1/auth/dev}, which signs in without Apple. For a
+     *     backend on the developer's own machine only, never in production.
      */
     public record Auth(
             @NotBlank @Size(min = 32) String sessionSecret,
             @NotNull Duration sessionLifetime,
             @NotEmpty List<@NotBlank String> appleAudiences,
-            @NotBlank String appleKeysUrl) {}
+            @NotBlank String appleKeysUrl,
+            boolean devSignIn) {}
 
     /**
      * How many corrections an account may ask for: per week (Monday to Sunday, UTC) on the free

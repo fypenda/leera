@@ -42,6 +42,13 @@ needs the capability on the App ID in the Apple Developer account
 (`ios/Runner/Runner.entitlements` already asks for it) and a device or
 simulator signed in to an Apple ID.
 
+Before the paid Apple Developer account exists, Sign in with Apple cannot
+work. Start the backend with `LEERA_DEV_SIGN_IN=true` and use the "Developer
+sign-in" button, shown in debug builds only. To install on an iPhone with a
+free account, also remove `CODE_SIGN_ENTITLEMENTS` from the Runner target in
+Xcode (Signing & Capabilities: remove "Sign in with Apple"), and put it back
+once the account is paid.
+
 `lib/core/database/app_database.g.dart` was cut down by hand from NOURISH's
 generated file to the three English tables. `build_runner` regenerates it;
 commit whatever it produces.

@@ -30,6 +30,8 @@ leera:
     # The app's bundle id: Apple writes it in the identity token.
     apple-audiences: ${LEERA_APPLE_AUDIENCES:dev.penda.leera}
     apple-keys-url: https://appleid.apple.com/auth/keys
+    # Signing in without Apple, for development. Never true in production.
+    dev-sign-in: ${LEERA_DEV_SIGN_IN:false}
   quota:
     free-per-week: ${LEERA_FREE_PER_WEEK:1}
     plus-per-day: ${LEERA_PLUS_PER_DAY:3}
