@@ -3,7 +3,6 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
-
 class $PracticeSessionsTable extends PracticeSessions
     with TableInfo<$PracticeSessionsTable, PracticeSessionRow> {
   @override
@@ -898,7 +897,6 @@ class SessionFeedbacksCompanion extends UpdateCompanion<SessionFeedbackRow> {
   }
 }
 
-
 class $SessionRecordingsTable extends SessionRecordings
     with TableInfo<$SessionRecordingsTable, SessionRecordingRow> {
   @override
@@ -1278,7 +1276,6 @@ class SessionRecordingsCompanion extends UpdateCompanion<SessionRecordingRow> {
         .toString();
   }
 }
-
 
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
