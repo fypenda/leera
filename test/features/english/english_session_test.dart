@@ -208,6 +208,14 @@ void main() {
     await _pumpApp(tester, iPadLandscape);
 
     expect(find.byType(EnglishPage), findsOneWidget);
+    // On the app's background, not on black: the page has its Scaffold.
+    expect(
+      find.descendant(
+        of: find.byType(EnglishPage),
+        matching: find.byType(Scaffold),
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(const ValueKey('no-finished-sessions')), findsOneWidget);
   });
 }
