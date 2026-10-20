@@ -30,6 +30,8 @@
 	<string>Leera turns your recorded English presentations into text so they can be corrected. On devices that support it, this happens on the device.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Leera records your spoken English presentations so you can listen to them again. Recordings stay on this device.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>During development, Leera reaches its server on your Mac over the local network.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Lets the app reach a backend on the local network over HTTP

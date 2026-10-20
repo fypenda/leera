@@ -74,36 +74,74 @@ final class SpeechTranscriber: NSObject {
       return
     }
 
+    // On the device first: the recording then never leaves it. If that hears
+    // nothing or fails (the on-device model is missing, or misses a strong
+    // accent), Apple's servers are asked once. They only take the first
+    // minute of a recording.
+    recognize(
+      path: path, recognizer: recognizer,
+      onDevice: recognizer.supportsOnDeviceRecognition
+    ) { [weak self] outcome in
+      switch outcome {
+      case .text(let text) where !text.isEmpty:
+        result(text)
+      case _ where recognizer.supportsOnDeviceRecognition:
+        self?.recognize(path: path, recognizer: recognizer, onDevice: false) { second in
+          switch second {
+          case .text(let text): result(text)
+          case .failure(let error): result(error)
+          }
+        }
+      case .text(let text):
+        result(text)
+      case .failure(let error):
+        result(error)
+      }
+    }
+  }
+
+  private enum Outcome {
+    case text(String)
+    case failure(FlutterError)
+  }
+
+  private func recognize(
+    path: String, recognizer: SFSpeechRecognizer, onDevice: Bool,
+    completion: @escaping (Outcome) -> Void
+  ) {
     let request = SFSpeechURLRecognitionRequest(url: URL(fileURLWithPath: path))
     request.shouldReportPartialResults = false
-    // On the device whenever it can: the recording then never leaves it.
-    if recognizer.supportsOnDeviceRecognition {
-      request.requiresOnDeviceRecognition = true
-    }
+    request.requiresOnDeviceRecognition = onDevice
     if #available(iOS 16, *) {
       request.addsPunctuation = true
     }
 
     var answered = false
-    func answer(_ value: Any?) {
+    func answer(_ outcome: Outcome) {
       if answered { return }
       answered = true
       task = nil
-      DispatchQueue.main.async { result(value) }
+      DispatchQueue.main.async { completion(outcome) }
     }
 
     task?.cancel()
     task = recognizer.recognitionTask(with: request) { recognition, error in
       if let recognition, recognition.isFinal {
-        answer(recognition.bestTranscription.formattedString)
+        let text = recognition.bestTranscription.formattedString
+        NSLog("Leera transcription: on device %ld, %ld characters", onDevice ? 1 : 0, text.count)
+        answer(.text(text))
       } else if let error {
         let nsError = error as NSError
+        NSLog(
+          "Leera transcription: on device %ld, error %@ %ld: %@", onDevice ? 1 : 0,
+          nsError.domain, nsError.code, nsError.localizedDescription)
         // "No speech detected": nothing was heard, which is an answer.
         if nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 1110 {
-          answer("")
+          answer(.text(""))
         } else {
           answer(
-            FlutterError(code: "failed", message: error.localizedDescription, details: nil))
+            .failure(
+              FlutterError(code: "failed", message: error.localizedDescription, details: nil)))
         }
       }
     }
