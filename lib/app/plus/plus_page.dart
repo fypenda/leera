@@ -23,6 +23,9 @@ class _PlusPageState extends ConsumerState<PlusPage> {
 
   static const double _maxWidth = 560;
 
+  /// How far the perks card rises over the teal band.
+  static const double _overlap = 48;
+
   void _say(String message) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(message)));
@@ -61,123 +64,75 @@ class _PlusPageState extends ConsumerState<PlusPage> {
     final chosen = offers.where((offer) => offer.plan == _plan).firstOrNull;
     final trial = chosen?.freeTrialDays;
 
+    final topInset = MediaQuery.paddingOf(context).top;
+
+    // Wider than this (an iPad), the page keeps a phone-like column; the
+    // teal band still spans the whole width.
+    Widget column(Widget child) => Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxWidth),
+        child: child,
+      ),
+    );
+
     return Scaffold(
-      body: Stack(
+      body: Column(
         children: [
-          // The teal band and the peach sun behind the top of the page.
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            height: 300,
-            child: Container(color: AppColors.highlight),
-          ),
-          Positioned(
-            right: -60,
-            top: -60,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: const BoxDecoration(
-                color: AppColors.accent,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: _maxWidth),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // The teal band, with the peach sun in its corner. It
+                  // scrolls with the page, and the perks card overlaps it.
+                  ClipRect(
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Container(color: AppColors.highlight),
+                        ),
+                        Positioned(
+                          right: -60,
+                          top: -60,
+                          child: Container(
+                            width: 200,
+                            height: 200,
+                            decoration: const BoxDecoration(
+                              color: AppColors.accent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        column(
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              24,
+                              topInset + 16,
+                              24,
+                              _overlap + 22,
+                            ),
+                            child: _Header(
+                              busy: _busy,
+                              onClose: _leave,
+                              onRestore: () => _run(
+                                purchases.restore,
+                                'No Leera Plus found on this Apple ID.',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: const Offset(0, -_overlap),
+                    child: column(
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Row(
-                              children: [
-                                Semantics(
-                                  button: true,
-                                  label: 'Close',
-                                  excludeSemantics: true,
-                                  child: Material(
-                                    color: AppColors.surface,
-                                    shape: const CircleBorder(),
-                                    child: InkWell(
-                                      key: const ValueKey('plus-close'),
-                                      customBorder: const CircleBorder(),
-                                      onTap: _leave,
-                                      child: const SizedBox(
-                                        width: 44,
-                                        height: 44,
-                                        child: Icon(
-                                          Icons.close_rounded,
-                                          size: 20,
-                                          color: AppColors.ink,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const Spacer(),
-                                TextButton(
-                                  key: const ValueKey('plus-restore'),
-                                  onPressed: _busy
-                                      ? null
-                                      : () => _run(
-                                          purchases.restore,
-                                          'No Leera Plus found on this Apple ID.',
-                                        ),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: AppColors.ink,
-                                    textStyle: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  child: const Text('Restore'),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 22),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: Image.asset(
-                                  'assets/brand/logo.png',
-                                  width: 56,
-                                  height: 56,
-                                  semanticLabel: 'Leera logo',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Leera Plus',
-                              style: TextStyle(
-                                fontFamily: displayFontFamily,
-                                fontSize: 34,
-                                fontWeight: FontWeight.w800,
-                                height: 1.05,
-                                letterSpacing: -0.7,
-                                color: AppColors.ink,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Fluency through real topics, without waiting a '
-                              'week.',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.ink,
-                              ),
-                            ),
-                            const SizedBox(height: 18),
                             const _Perks(),
                             const SizedBox(height: 18),
                             Semantics(
@@ -200,47 +155,52 @@ class _PlusPageState extends ConsumerState<PlusPage> {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 4, 24, 12),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            height: 58,
-                            width: double.infinity,
-                            child: FilledButton(
-                              key: const ValueKey('plus-subscribe'),
-                              onPressed: _busy || chosen == null
-                                  ? null
-                                  : () => _run(() => purchases.buy(_plan), ''),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.ink,
-                                foregroundColor: AppColors.surface,
-                                shape: const StadiumBorder(),
-                                textStyle: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              child: Text(
-                                trial == 7
-                                    ? 'Start my free week'
-                                    : trial != null
-                                    ? 'Start my $trial free days'
-                                    : 'Subscribe',
-                              ),
-                            ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: column(
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 58,
+                      width: double.infinity,
+                      child: FilledButton(
+                        key: const ValueKey('plus-subscribe'),
+                        onPressed: _busy || chosen == null
+                            ? null
+                            : () => _run(() => purchases.buy(_plan), ''),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.ink,
+                          foregroundColor: AppColors.surface,
+                          shape: const StadiumBorder(),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
                           ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Cancel anytime in Settings · Terms · Privacy',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
+                        ),
+                        child: Text(
+                          trial == 7
+                              ? 'Start my free week'
+                              : trial != null
+                              ? 'Start my $trial free days'
+                              : 'Subscribe',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Cancel anytime in Settings · Terms · Privacy',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textMuted,
                       ),
                     ),
                   ],
@@ -252,6 +212,98 @@ class _PlusPageState extends ConsumerState<PlusPage> {
       ),
     );
   }
+}
+
+/// The top of the page, on the teal band: close and restore, the logo, the
+/// name and the promise.
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.busy,
+    required this.onClose,
+    required this.onRestore,
+  });
+
+  final bool busy;
+  final VoidCallback onClose;
+  final VoidCallback onRestore;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Semantics(
+            button: true,
+            label: 'Close',
+            excludeSemantics: true,
+            child: Material(
+              color: AppColors.surface,
+              shape: const CircleBorder(),
+              child: InkWell(
+                key: const ValueKey('plus-close'),
+                customBorder: const CircleBorder(),
+                onTap: onClose,
+                child: const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 20,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
+          TextButton(
+            key: const ValueKey('plus-restore'),
+            onPressed: busy ? null : onRestore,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.ink,
+              textStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+      const SizedBox(height: 22),
+      ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Image.asset(
+          'assets/brand/logo.png',
+          width: 56,
+          height: 56,
+          semanticLabel: 'Leera logo',
+        ),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        'Leera Plus',
+        style: TextStyle(
+          fontFamily: displayFontFamily,
+          fontSize: 34,
+          fontWeight: FontWeight.w800,
+          height: 1.05,
+          letterSpacing: -0.7,
+          color: AppColors.ink,
+        ),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        'Fluency through real topics, without waiting a week.',
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: AppColors.ink,
+        ),
+      ),
+    ],
+  );
 }
 
 /// What Plus adds. Only what the app does today: features still to come
