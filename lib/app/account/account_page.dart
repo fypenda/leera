@@ -95,8 +95,8 @@ class _AccountPageState extends ConsumerState<AccountPage> {
         children: [
           Text(
             switch (status.plan) {
-              Plan.plus => 'Leera Plus ✨',
-              Plan.dev => 'Developer account 🛠️',
+              Plan.plus => 'Leera Plus',
+              Plan.dev => 'Developer account',
               Plan.free => 'Free plan',
             },
             key: const ValueKey('account-plan'),
@@ -114,6 +114,13 @@ class _AccountPageState extends ConsumerState<AccountPage> {
               '${status.used} this week. No limit while the backend lets '
               'developers sign in without Apple.',
               style: textTheme.bodyMedium,
+            ),
+            // To see the paywall, which a developer account never needs.
+            const SizedBox(height: AppSpacing.lg),
+            OutlinedButton(
+              key: const ValueKey('open-plus'),
+              onPressed: () => context.pushNamed(plusRouteName),
+              child: const Text('Preview Leera Plus'),
             ),
           ] else ...[
             const SizedBox(height: AppSpacing.md),
