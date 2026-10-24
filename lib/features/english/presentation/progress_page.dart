@@ -171,6 +171,10 @@ class _LevelCard extends StatelessWidget {
     } else if (progress >= 1) {
       headline = 'C1 reached';
       detail = 'Estimated from your latest correction.';
+    } else if (percent == 0) {
+      // "0% of the way" says nothing: name the next level instead.
+      headline = 'Next step: ${cefrLevels[cefrLevels.indexOf(level) + 1]}';
+      detail = 'Estimated from your latest correction.';
     } else {
       headline = '$percent% of the way to C1';
       detail = 'Estimated from your latest correction.';
@@ -316,6 +320,11 @@ class _ScoreChart extends StatelessWidget {
                       child: _Bar(
                         week: week,
                         current: index == weeks.length - 1,
+                        // The month under the first week, and under each
+                        // week that starts a new one.
+                        showMonth:
+                            index == 0 ||
+                            weeks[index - 1].monday.month != week.monday.month,
                         area: _barArea,
                       ),
                     ),
@@ -346,10 +355,16 @@ class _ScoreChart extends StatelessWidget {
 }
 
 class _Bar extends StatelessWidget {
-  const _Bar({required this.week, required this.current, required this.area});
+  const _Bar({
+    required this.week,
+    required this.current,
+    required this.showMonth,
+    required this.area,
+  });
 
   final WeeklyScore week;
   final bool current;
+  final bool showMonth;
   final double area;
 
   @override
@@ -369,7 +384,9 @@ class _Bar extends StatelessWidget {
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Container(
-                height: average == null ? 4 : (average / 10 * area).clamp(4.0, area),
+                height: average == null
+                    ? 4
+                    : (average / 10 * area).clamp(4.0, area),
                 decoration: BoxDecoration(
                   color: average == null
                       ? AppColors.surfaceMuted.withValues(alpha: 0.5)
@@ -382,16 +399,24 @@ class _Bar extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              current ? 'Now' : label,
-              maxLines: 1,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textMuted,
-              ),
+          // The day of the week's Monday, and its month below when it
+          // changes: every label the same size, whatever the dates.
+          Text(
+            current ? 'Now' : '${week.monday.day}',
+            maxLines: 1,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: current ? AppColors.primary : AppColors.textMuted,
+            ),
+          ),
+          Text(
+            showMonth && !current ? label.split(' ').first : '',
+            maxLines: 1,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textMuted,
             ),
           ),
         ],

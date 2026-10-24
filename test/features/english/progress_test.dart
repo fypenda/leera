@@ -37,17 +37,7 @@ void main() {
   });
 
   appTest('a correction shows on Progress', (tester) async {
-    final container = await pumpEnglishApp(tester, iPhonePortrait);
-    final repository = container.read(practiceSessionRepositoryProvider);
-    await runInApp(tester, () async {
-      final session = await repository.start(
-        topicId: 'suez-canal',
-        format: RestitutionFormat.shortEssay,
-      );
-      await repository.complete(session.id, presentation: 'The canal.');
-      await repository.saveFeedback(session.id, sampleFeedback());
-    });
-    await openEnglishHome(tester);
+    await _pumpWithCorrection(tester, level: 'B2+');
 
     await _tap(tester, _key('nav-progress'));
 
@@ -60,4 +50,31 @@ void main() {
     expect(find.text('Focus area: naturalness'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  appTest('at the first level, Progress names the next one', (tester) async {
+    await _pumpWithCorrection(tester, level: 'A2');
+
+    await _tap(tester, _key('nav-progress'));
+
+    expect(find.text('Next step: B1'), findsOneWidget);
+    expect(find.textContaining('0%'), findsNothing);
+  });
+}
+
+/// Starts the app with one finished session, corrected at [level].
+Future<void> _pumpWithCorrection(
+  WidgetTester tester, {
+  required String level,
+}) async {
+  final container = await pumpEnglishApp(tester, iPhonePortrait);
+  final repository = container.read(practiceSessionRepositoryProvider);
+  await runInApp(tester, () async {
+    final session = await repository.start(
+      topicId: 'suez-canal',
+      format: RestitutionFormat.shortEssay,
+    );
+    await repository.complete(session.id, presentation: 'The canal.');
+    await repository.saveFeedback(session.id, sampleFeedback(level: level));
+  });
+  await openEnglishHome(tester);
 }
