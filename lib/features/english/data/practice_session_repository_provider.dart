@@ -6,9 +6,9 @@ import '../../../core/time/clock.dart';
 import '../domain/practice_session_repository.dart';
 import 'drift_practice_session_repository.dart';
 
-/// The practice sessions repository. This is the only place the English
-/// module reads the database provider; everything else depends on
-/// [PracticeSessionRepository].
+/// The practice sessions repository. With the reviews repository, the only
+/// places the English module reads the database provider; everything else
+/// depends on [PracticeSessionRepository].
 final practiceSessionRepositoryProvider = Provider<PracticeSessionRepository>((
   ref,
 ) {

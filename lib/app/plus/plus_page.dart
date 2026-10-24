@@ -342,7 +342,7 @@ class _Perks extends StatelessWidget {
       foreground: AppColors.primary,
       title: 'Vocabulary review',
       detail: 'Spaced repetition of your saved words',
-      soon: true,
+      soon: false,
     ),
   ];
 

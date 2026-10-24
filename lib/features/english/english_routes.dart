@@ -17,3 +17,6 @@ const progressRouteName = 'progress';
 
 /// The Journal tab.
 const journalRouteName = 'journal';
+
+/// Reviewing the words kept, full screen.
+const reviewRouteName = 'review';

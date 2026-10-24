@@ -10,6 +10,7 @@ import '../features/english/presentation/english_restitution_page.dart';
 import '../features/english/presentation/english_topic_page.dart';
 import '../features/english/presentation/journal_page.dart';
 import '../features/english/presentation/progress_page.dart';
+import '../features/english/presentation/review_page.dart';
 import 'account/account_page.dart';
 import 'account/sign_in_page.dart';
 import 'main_shell.dart';
@@ -98,6 +99,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/account',
         name: accountRouteName,
         builder: (context, state) => const AccountPage(),
+      ),
+      GoRoute(
+        path: '/review',
+        name: reviewRouteName,
+        builder: (context, state) => const ReviewPage(),
       ),
       GoRoute(
         path: '/plus',

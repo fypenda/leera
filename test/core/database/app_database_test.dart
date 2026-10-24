@@ -38,9 +38,9 @@ void main() {
     setUp(() => db = AppDatabase(NativeDatabase.memory()));
     tearDown(() => db.close());
 
-    test('is created at schema version 1 with foreign keys enforced', () async {
-      expect(db.schemaVersion, 1);
-      expect(await _pragma(db, 'user_version'), 1);
+    test('is created at schema version 2 with foreign keys enforced', () async {
+      expect(db.schemaVersion, 2);
+      expect(await _pragma(db, 'user_version'), 2);
       expect(await _pragma(db, 'foreign_keys'), 1);
     });
 
@@ -86,7 +86,24 @@ void main() {
       addTearDown(reopened.close);
 
       expect(await _readNotes(reopened), ['still here']);
-      expect(await _pragma(reopened, 'user_version'), 1);
+      expect(await _pragma(reopened, 'user_version'), 2);
+    });
+
+    test('a version 1 file gains word_reviews and keeps its data', () async {
+      // A version 1 file: the current schema without word_reviews.
+      final current = AppDatabase(NativeDatabase(file));
+      await _createScratchTable(current);
+      await _insertNote(current, 'kept');
+      await current.customStatement('DROP TABLE word_reviews');
+      await current.customStatement('PRAGMA user_version = 1');
+      await current.close();
+
+      final migrated = AppDatabase(NativeDatabase(file));
+      addTearDown(migrated.close);
+
+      expect(await _readNotes(migrated), ['kept']);
+      expect(await _pragma(migrated, 'user_version'), 2);
+      expect(await migrated.select(migrated.wordReviews).get(), isEmpty);
     });
 
     test(
@@ -101,7 +118,7 @@ void main() {
         final fromTheFuture = AppDatabase(
           NativeDatabase(
             file,
-            setup: (raw) => raw.execute('PRAGMA user_version = 2'),
+            setup: (raw) => raw.execute('PRAGMA user_version = 3'),
           ),
         );
         addTearDown(fromTheFuture.close);
@@ -126,7 +143,7 @@ void main() {
         addTearDown(inspected.close);
         await expectLater(_readNotes(inspected), throwsStateError);
 
-        expect(version, 2);
+        expect(version, 3);
         expect(notes, ['kept']);
       },
     );

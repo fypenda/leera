@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../core/auth/auth_actions.dart';
+import '../../../core/auth/quota.dart';
+import '../../../core/auth/session.dart';
 import '../../../core/common/widgets/load_failure.dart';
 import '../../../core/time/calendar_date.dart';
 import '../../../core/time/date_formatting.dart';
 import '../../../core/time/today.dart';
 import '../application/english_feedback.dart';
+import '../application/english_reviews.dart';
 import '../application/english_sessions.dart';
 import '../data/topic_catalog.dart';
 import '../domain/kept_words.dart';
 import '../domain/practice_session.dart';
+import '../domain/word_review.dart';
+import '../english_routes.dart';
 import 'english_page.dart';
 import 'session_navigation.dart';
 
@@ -67,6 +74,10 @@ class _JournalPageState extends ConsumerState<JournalPage> {
               onChanged: (section) => setState(() => _section = section),
             ),
             const SizedBox(height: AppSpacing.lg),
+            if (_section == _Section.words && words.isNotEmpty) ...[
+              _ReviewEntry(words: words, today: today),
+              const SizedBox(height: AppSpacing.md),
+            ],
             if (_section == _Section.words)
               _Words(
                 words: words,
@@ -129,6 +140,94 @@ class _JournalPageState extends ConsumerState<JournalPage> {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The way to the review, with how many words are due. Reviewing is part
+/// of Leera Plus: on the free plan, it leads to the paywall.
+class _ReviewEntry extends ConsumerWidget {
+  const _ReviewEntry({required this.words, required this.today});
+
+  final List<KeptWord> words;
+  final CalendarDate today;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reviews = ref.watch(wordReviewsProvider).value ?? const {};
+    final plan = ref.watch(quotaProvider).value?.plan;
+    final locked = plan == Plan.free;
+    final due = reviewQueue(
+      words,
+      reviews,
+      today,
+      limit: words.length,
+    ).length;
+
+    return Material(
+      color: AppColors.ink,
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        key: const ValueKey('journal-review'),
+        borderRadius: BorderRadius.circular(24),
+        onTap: () => context.pushNamed(locked ? plusRouteName : reviewRouteName),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.highlight,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.style_outlined,
+                  size: 22,
+                  color: AppColors.ink,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Review your words',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.background,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      locked
+                          ? 'With Leera Plus'
+                          : due == 0
+                          ? 'All caught up for today'
+                          : due == 1
+                          ? '1 word to review today'
+                          : '$due words to review today',
+                      key: const ValueKey('journal-review-due'),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFD5DCE0),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                locked ? Icons.lock_outline_rounded : Icons.chevron_right_rounded,
+                color: AppColors.background,
+              ),
+            ],
           ),
         ),
       ),
