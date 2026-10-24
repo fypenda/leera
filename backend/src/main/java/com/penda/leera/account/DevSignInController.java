@@ -17,7 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>Only there when {@code LEERA_DEV_SIGN_IN=true}: anyone who can reach the backend could then
  * open any development account. Never turn it on in production. The accounts it makes are named
- * {@code dev:<name>} and cannot be reached with Sign in with Apple.
+ * {@code dev:<name>}, cannot be reached with Sign in with Apple, and have no quota while this is
+ * on.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -25,6 +26,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class DevSignInController {
 
     private static final Logger log = LoggerFactory.getLogger(DevSignInController.class);
+
+    /** What the Apple id of a development account starts with. */
+    static final String SUBJECT_PREFIX = "dev:";
 
     /** @param name a short name for the development account, such as {@code penda} */
     public record DevSignInRequest(@NotBlank @Pattern(regexp = "[a-z0-9-]{1,40}") String name) {}
@@ -43,7 +47,7 @@ public class DevSignInController {
 
     @PostMapping("/dev")
     AccountController.SessionResponse signIn(@Valid @RequestBody DevSignInRequest request) {
-        Account account = accounts.findOrCreateByAppleSubject("dev:" + request.name());
+        Account account = accounts.findOrCreateByAppleSubject(SUBJECT_PREFIX + request.name());
         SessionTokens.Issued session = sessions.issue(account.id());
         return new AccountController.SessionResponse(
                 session.token(),

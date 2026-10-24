@@ -72,7 +72,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(QuotaExceededException.class)
     ResponseEntity<ApiError> quota(QuotaExceededException e) {
         var status = e.status();
-        String period = status.plan() == QuotaService.Plan.PLUS
+        String period = status.plan() != QuotaService.Plan.FREE
                 ? "today"
                 : "this week";
         return respond(

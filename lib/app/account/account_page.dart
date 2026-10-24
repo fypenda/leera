@@ -93,7 +93,11 @@ class _AccountPageState extends ConsumerState<AccountPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            status.plan == Plan.plus ? 'Leera Plus ✨' : 'Free plan',
+            switch (status.plan) {
+              Plan.plus => 'Leera Plus ✨',
+              Plan.dev => 'Developer account 🛠️',
+              Plan.free => 'Free plan',
+            },
             key: const ValueKey('account-plan'),
             style: textTheme.headlineSmall,
           ),
@@ -103,15 +107,24 @@ class _AccountPageState extends ConsumerState<AccountPage> {
             key: const ValueKey('account-quota'),
             style: textTheme.titleMedium,
           ),
-          const SizedBox(height: AppSpacing.md),
-          LinearProgressIndicator(
-            value: status.limit == 0 ? 1 : status.used / status.limit,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Starts again on ${formatLongDate(status.resetsAt.toLocal())}.',
-            style: textTheme.bodyMedium,
-          ),
+          if (status.plan == Plan.dev) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              '${status.used} this week. No limit while the backend lets '
+              'developers sign in without Apple.',
+              style: textTheme.bodyMedium,
+            ),
+          ] else ...[
+            const SizedBox(height: AppSpacing.md),
+            LinearProgressIndicator(
+              value: status.limit == 0 ? 1 : status.used / status.limit,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Starts again on ${formatLongDate(status.resetsAt.toLocal())}.',
+              style: textTheme.bodyMedium,
+            ),
+          ],
         ],
       ),
       AsyncError() => LoadFailure(

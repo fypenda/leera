@@ -242,6 +242,10 @@ void main() {
       expect(describeQuota(quota(Plan.free, 1, 1)), 'No corrections left this week');
       expect(describeQuota(quota(Plan.plus, 1, 3)), '2 corrections left today');
       expect(describeQuota(quota(Plan.plus, 5, 3)), 'No corrections left today');
+      expect(
+        describeQuota(quota(Plan.dev, 40, 2147483647)),
+        'Unlimited corrections (developer)',
+      );
     });
 
     test('an incomplete quota is refused', () {

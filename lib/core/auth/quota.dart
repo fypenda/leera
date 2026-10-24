@@ -1,5 +1,8 @@
 /// How many corrections the account may still ask for.
-enum Plan { free, plus }
+///
+/// [dev] is a development account (signed in without Apple): its
+/// corrections are counted but never refused.
+enum Plan { free, plus, dev }
 
 class Quota {
   const Quota({
@@ -24,6 +27,7 @@ class Quota {
     final plan = switch (json['plan']) {
       'plus' => Plan.plus,
       'free' => Plan.free,
+      'dev' => Plan.dev,
       _ => throw const FormatException('Unknown plan.'),
     };
     final used = json['used'];
@@ -38,6 +42,7 @@ class Quota {
 
 /// The quota in one short line: "1 correction left this week".
 String describeQuota(Quota quota) {
+  if (quota.plan == Plan.dev) return 'Unlimited corrections (developer)';
   final period = quota.plan == Plan.plus ? 'today' : 'this week';
   return switch (quota.remaining) {
     0 => 'No corrections left $period',

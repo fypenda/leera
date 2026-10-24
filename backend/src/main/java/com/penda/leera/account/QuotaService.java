@@ -20,13 +20,18 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>A correction is reserved before the model is asked, and released if the model fails: what
  * did not reach the person does not count. The free plan counts per week (from Monday, UTC),
  * Leera Plus per day (UTC).
+ *
+ * <p>Development accounts ({@code dev:<name>}, see {@link DevSignInController}) have no limit, as
+ * long as signing in without Apple is on: they exist to try the app over and over.
  */
 @Service
 public class QuotaService {
 
     public enum Plan {
         FREE,
-        PLUS
+        PLUS,
+        /** A development account: corrections are counted, never refused. */
+        DEV
     }
 
     /** Where an account stands: {@code used} of {@code limit} until {@code resetsAt}. */
@@ -44,6 +49,7 @@ public class QuotaService {
     private final AccountRepository accounts;
     private final Clock clock;
     private final LeeraProperties.Quota quota;
+    private final boolean devSignIn;
 
     public QuotaService(
             JdbcClient jdbc, AccountRepository accounts, Clock clock, LeeraProperties properties) {
@@ -51,6 +57,7 @@ public class QuotaService {
         this.accounts = accounts;
         this.clock = clock;
         this.quota = properties.quota();
+        this.devSignIn = properties.auth().devSignIn();
     }
 
     public Status status(UUID accountId) {
@@ -83,9 +90,22 @@ public class QuotaService {
 
     Status statusOf(Account account) {
         Instant now = clock.instant();
+        if (devSignIn && account.appleSubject().startsWith(DevSignInController.SUBJECT_PREFIX)) {
+            Instant start = startOfWeek(now);
+            Instant end = start.plus(Duration.ofDays(7));
+            return new Status(Plan.DEV, countBetween(account, start, end), Integer.MAX_VALUE, end);
+        }
         boolean plus = account.isPlus(now);
         Instant start = plus ? startOfDay(now) : startOfWeek(now);
         Instant end = start.plus(plus ? Duration.ofDays(1) : Duration.ofDays(7));
+        return new Status(
+                plus ? Plan.PLUS : Plan.FREE,
+                countBetween(account, start, end),
+                plus ? quota.plusPerDay() : quota.freePerWeek(),
+                end);
+    }
+
+    private int countBetween(Account account, Instant start, Instant end) {
         Long used =
                 jdbc.sql(
                                 "SELECT COUNT(*) FROM corrections WHERE account_id = :account "
@@ -95,11 +115,7 @@ public class QuotaService {
                         .param("end", AccountRepository.utc(end))
                         .query(Long.class)
                         .single();
-        return new Status(
-                plus ? Plan.PLUS : Plan.FREE,
-                used.intValue(),
-                plus ? quota.plusPerDay() : quota.freePerWeek(),
-                end);
+        return used.intValue();
     }
 
     static Instant startOfDay(Instant now) {

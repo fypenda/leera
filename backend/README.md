@@ -91,7 +91,8 @@ account the first time. Sessions last 30 days.
 Before the Apple Developer account exists, Sign in with Apple cannot work.
 With `LEERA_DEV_SIGN_IN=true`, `POST /api/v1/auth/dev` with
 `{"name": "penda"}` (lower case, digits, `-`) opens the development account
-`dev:penda` and answers like `/auth/apple`. Debug builds of the app show a
+`dev:penda` and answers like `/auth/apple`. Development accounts have no
+quota (plan `dev`): their corrections are counted, never refused. Debug builds of the app show a
 "Developer sign-in" button that uses it. Anyone who can reach the backend
 could open such an account, so this stays off in production; the backend
 logs a warning at start-up when it is on.
