@@ -14,3 +14,6 @@ const englishSessionParameter = 'sessionId';
 
 /// The Progress tab.
 const progressRouteName = 'progress';
+
+/// The Journal tab.
+const journalRouteName = 'journal';
