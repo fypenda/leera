@@ -12,12 +12,13 @@ import '../features/english/presentation/progress_page.dart';
 import 'account/account_page.dart';
 import 'account/sign_in_page.dart';
 import 'main_shell.dart';
+import 'plus/plus_page.dart';
 
 const _startingPath = '/starting';
 const _signInPath = '/sign-in';
 
 /// The app's routes: signing in, the tabs (Today and Progress), the three
-/// steps of a session, and the account.
+/// steps of a session, the account and Leera Plus.
 ///
 /// Signed out, every address leads to signing in; signed in, signing in
 /// leads home. Until the session has been read from the Keychain, the app
@@ -87,6 +88,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/account',
         name: accountRouteName,
         builder: (context, state) => const AccountPage(),
+      ),
+      GoRoute(
+        path: '/plus',
+        name: plusRouteName,
+        builder: (context, state) => const PlusPage(),
       ),
       // Each page finds its session itself, and says so if there is none.
       GoRoute(

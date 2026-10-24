@@ -87,6 +87,14 @@ class EnglishPage extends ConsumerWidget {
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
+                    if (quota.plan == Plan.free && quota.remaining == 0)
+                      Center(
+                        child: TextButton(
+                          key: const ValueKey('home-open-plus'),
+                          onPressed: () => context.pushNamed(plusRouteName),
+                          child: const Text('Get Leera Plus'),
+                        ),
+                      ),
                   ],
                   const SizedBox(height: AppSpacing.xl - 4),
                   Row(

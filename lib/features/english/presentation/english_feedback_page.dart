@@ -238,6 +238,12 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
                 child: const Text('Try again'),
               ),
             if (_failure == BackendFailure.quotaExceeded)
+              FilledButton(
+                key: const ValueKey('feedback-open-plus'),
+                onPressed: () => context.pushNamed(plusRouteName),
+                child: const Text('Get Leera Plus'),
+              ),
+            if (_failure == BackendFailure.quotaExceeded)
               OutlinedButton(
                 key: const ValueKey('feedback-open-account'),
                 onPressed: () => context.pushNamed(accountRouteName),

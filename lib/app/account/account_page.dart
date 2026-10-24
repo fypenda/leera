@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/ai/backend_client.dart';
 import '../../core/auth/auth_actions.dart';
 import '../../core/auth/quota.dart';
+import '../../core/auth/session.dart';
 import '../../core/common/widgets/load_failure.dart';
 import '../../core/time/date_formatting.dart';
 import '../../features/english/english_routes.dart';
@@ -124,6 +125,14 @@ class _AccountPageState extends ConsumerState<AccountPage> {
               'Starts again on ${formatLongDate(status.resetsAt.toLocal())}.',
               style: textTheme.bodyMedium,
             ),
+            if (status.plan == Plan.free) ...[
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton(
+                key: const ValueKey('open-plus'),
+                onPressed: () => context.pushNamed(plusRouteName),
+                child: const Text('Get Leera Plus: 3 corrections a day'),
+              ),
+            ],
           ],
         ],
       ),

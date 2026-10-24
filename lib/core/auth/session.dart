@@ -82,3 +82,4 @@ final sessionProvider = FutureProvider<Session?>(
 /// The names of the account routes, so features can open them.
 const signInRouteName = 'sign-in';
 const accountRouteName = 'account';
+const plusRouteName = 'plus';
