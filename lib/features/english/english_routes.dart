@@ -11,3 +11,6 @@ const englishFeedbackRouteName = 'english-feedback';
 
 /// The path parameter of the session routes that holds the session's id.
 const englishSessionParameter = 'sessionId';
+
+/// The Progress tab.
+const progressRouteName = 'progress';

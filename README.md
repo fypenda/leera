@@ -59,12 +59,12 @@ The backend: see [`backend/README.md`](backend/README.md).
 
 - Reserve the name Leera in App Store Connect, then set the final bundle
   id (provisionally `dev.penda.leera`).
-- Progress and Leera Plus from the Leera design canvas, then the bottom
-  navigation (Today, Explore, Journal, Progress). Today and the session
-  steps (Topic, Speak, Write, Feedback) are done.
+- Leera Plus (the paywall) from the Leera design canvas, then Explore and
+  Journal in the tab bar. Today, Progress and the session steps (Topic,
+  Speak, Write, Feedback) are done.
 - Paywall with RevenueCat, and its webhook on the backend to set Leera Plus.
 - Revoke the Sign in with Apple tokens when an account is deleted (see
   `backend/README.md`).
 - Onboarding (level, interests), a larger topic bank, streak.
-- Optional: bring back the vocabulary journal and score charts, which lived in
-  NOURISH's Journal and Progress pages.
+- Optional: bring back the vocabulary journal, which lived in NOURISH's
+  Journal page.

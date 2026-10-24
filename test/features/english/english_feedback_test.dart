@@ -101,7 +101,7 @@ void main() {
       await _pumpUntil(tester, _headline);
 
       expect(find.byType(EnglishFeedbackPage), findsOneWidget);
-      expect(find.text('Clear and well built 🎉'), findsOneWidget);
+      expect(find.text('Clear and well built'), findsOneWidget);
       expect(find.byKey(const ValueKey('estimated-level')), findsOneWidget);
       expect(find.text('chokepoint'), findsWidgets);
       expect(tester.takeException(), isNull);
