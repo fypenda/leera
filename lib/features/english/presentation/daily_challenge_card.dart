@@ -65,7 +65,7 @@ class DailyChallengeCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'DAILY CHALLENGE · ENGLISH 🇬🇧',
+                      "TODAY'S CHALLENGE",
                       style: textTheme.labelSmall?.copyWith(
                         color: AppColors.ink,
                       ),
@@ -76,7 +76,7 @@ class DailyChallengeCard extends StatelessWidget {
                         maxWidth: roomy ? 400 : 230,
                       ),
                       child: Text(
-                        'A random topic. You research, you present.',
+                        'A random topic. You research, you explain.',
                         style: TextStyle(
                           fontFamily: displayFontFamily,
                           fontSize: roomy ? 36 : 27,
@@ -106,7 +106,7 @@ class DailyChallengeCard extends StatelessWidget {
                         foregroundColor: AppColors.ink,
                       ),
                       child: Text(
-                        continuing ? 'Continue my session →' : 'Draw my topic →',
+                        continuing ? 'Continue my session →' : 'Roll my topic →',
                       ),
                     ),
                   ],

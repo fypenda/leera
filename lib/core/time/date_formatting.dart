@@ -43,3 +43,13 @@ String formatLongDate(DateTime date) =>
 /// Formats a calendar date briefly, as e.g. "Oct 5".
 String formatShortDate(CalendarDate date) =>
     '${_months[date.month - 1].substring(0, 3)} ${date.day}';
+
+/// A day as seen from [today]: "Today", "Yesterday", the day of the week
+/// within the last week ("Friday"), or else a short date ("Oct 5").
+String formatRelativeDay(CalendarDate day, CalendarDate today) {
+  final daysAgo = day.daysUntil(today);
+  if (daysAgo == 0) return 'Today';
+  if (daysAgo == 1) return 'Yesterday';
+  if (daysAgo > 1 && daysAgo < 7) return _weekdays[day.weekday - 1];
+  return formatShortDate(day);
+}

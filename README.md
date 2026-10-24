@@ -59,8 +59,9 @@ The backend: see [`backend/README.md`](backend/README.md).
 
 - Reserve the name Leera in App Store Connect, then set the final bundle
   id (provisionally `dev.penda.leera`).
-- Bring the screens in line with the Leera design canvas (Today with the
-  week and streak, Topic, Speak, Write, Feedback, Progress, Leera Plus).
+- Bring the other screens in line with the Leera design canvas (Topic,
+  Speak, Write, Feedback, Progress, Leera Plus), then the bottom navigation
+  (Today, Explore, Journal, Progress). Today is done.
 - Paywall with RevenueCat, and its webhook on the backend to set Leera Plus.
 - Revoke the Sign in with Apple tokens when an account is deleted (see
   `backend/README.md`).

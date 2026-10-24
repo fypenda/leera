@@ -146,7 +146,7 @@ void main() {
 
       await _tap(tester, _key('feedback-done'));
       expect(find.byType(EnglishPage), findsOneWidget);
-      expect(find.textContaining('🎙️ 1:24'), findsOneWidget);
+      expect(find.text('Spoken · 1:24 · Today'), findsOneWidget);
     });
   }
 

@@ -235,7 +235,10 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('👤 1 correction left this week'), findsOneWidget);
+    expect(find.text('1 correction left this week'), findsOneWidget);
+    // The session's mean score, out of 10: (7 + 8 + 6 + 9 + 8) / 5.
+    expect(find.text('7.6'), findsOneWidget);
+    expect(find.text('1 word'), findsOneWidget);
   });
 
   appTest('before any correction, the home page says what will come', (

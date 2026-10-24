@@ -79,6 +79,10 @@ class FeedbackScores {
   final int structure;
   final int content;
 
+  /// The five scores' mean, out of 10.
+  double get average =>
+      (grammar + vocabulary + naturalness + structure + content) / 5;
+
   /// Each criterion with its label, in display order.
   List<(String, int)> get criteria => [
     ('✏️ Grammar', grammar),

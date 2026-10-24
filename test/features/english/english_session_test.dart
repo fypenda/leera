@@ -53,7 +53,7 @@ final _writtenField = find.byKey(const ValueKey('written-presentation'));
 /// Draws a topic from the home page.
 Future<void> _drawTopic(WidgetTester tester) async {
   await openEnglishHome(tester);
-  await _tap(tester, find.text('Draw my topic →'));
+  await _tap(tester, find.text('Roll my topic →'));
 }
 
 void main() {
@@ -107,6 +107,9 @@ void main() {
       await _tap(tester, find.byKey(const ValueKey('feedback-done')));
       expect(find.byType(EnglishPage), findsOneWidget);
       expect(find.byType(PracticeSessionTile), findsOneWidget);
+      expect(find.text('Written · Today'), findsOneWidget);
+      // Practised today: the week shows it, and the streak starts.
+      expect(find.text('1-day streak'), findsOneWidget);
       expect(find.text(title), findsOneWidget);
     });
   }
