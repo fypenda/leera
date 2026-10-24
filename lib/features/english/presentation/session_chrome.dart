@@ -115,11 +115,14 @@ class StepEyebrow extends StatelessWidget {
 class BottomActionButton extends StatelessWidget {
   const BottomActionButton({
     super.key,
+    this.buttonKey,
     required this.label,
     required this.icon,
     required this.onTap,
   });
 
+  /// The key of the button itself, for tests that read whether it is on.
+  final Key? buttonKey;
   final String label;
   final IconData icon;
 
@@ -131,6 +134,7 @@ class BottomActionButton extends StatelessWidget {
     height: 58,
     width: double.infinity,
     child: FilledButton(
+      key: buttonKey,
       onPressed: onTap,
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.ink,

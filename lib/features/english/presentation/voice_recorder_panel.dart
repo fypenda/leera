@@ -225,7 +225,7 @@ class _Ready extends StatelessWidget {
 
     return Column(
       children: [
-        Text('🎙️ Ready when you are', style: textTheme.titleMedium),
+        Text('Ready when you are', style: textTheme.titleMedium),
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Aim for about ${formatRecordingLength(target)}. Take a breath, '
@@ -416,7 +416,7 @@ class _Recorded extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('🎧 Your recording', style: textTheme.titleMedium),
+        Text('Your recording', style: textTheme.titleMedium),
         const SizedBox(height: AppSpacing.md),
         RecordingPlayer(recording: recording),
         if (onRecordAgain case final recordAgain?) ...[
@@ -425,7 +425,7 @@ class _Recorded extends StatelessWidget {
             child: TextButton(
               key: const ValueKey('record-again'),
               onPressed: recordAgain,
-              child: const Text('🔁 Record again'),
+              child: const Text('Record again'),
             ),
           ),
         ],

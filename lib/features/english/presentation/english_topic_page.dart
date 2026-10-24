@@ -209,7 +209,7 @@ class _ResearchState extends ConsumerState<_Research> {
                       AppSpacing.lg,
                     ),
                     child: BottomActionButton(
-                      key: const ValueKey('done-researching'),
+                      buttonKey: const ValueKey('done-researching'),
                       label: "I'm ready, let's explain",
                       icon: Icons.arrow_forward_rounded,
                       onTap: _busy ? null : _doneResearching,
@@ -249,13 +249,13 @@ class _TopicCard extends StatelessWidget {
       child: Stack(
         children: [
           const Positioned(
-            right: -30,
-            bottom: -34,
+            right: -44,
+            bottom: -44,
             child: ExcludeSemantics(
               child: Icon(
                 Icons.public_rounded,
-                size: 150,
-                color: Color(0x2E24323A),
+                size: 140,
+                color: Color(0x1F24323A),
               ),
             ),
           ),
@@ -290,7 +290,7 @@ class _TopicCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md + 2),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 260),
+                  constraints: const BoxConstraints(maxWidth: 240),
                   child: Text(
                     prompt,
                     style: const TextStyle(
@@ -374,37 +374,30 @@ class _FormatRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Rolled format', style: textTheme.bodySmall),
+                Row(
+                  children: [
+                    Text('Rolled format', style: textTheme.bodySmall),
+                    const SizedBox(width: AppSpacing.sm),
+                    const Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 12,
+                      color: AppColors.coralStrong,
+                    ),
+                    const SizedBox(width: 3),
+                    const Text(
+                      'Surprise',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.coralStrong,
+                      ),
+                    ),
+                  ],
+                ),
                 Text(
                   format.summary,
                   key: const ValueKey('topic-format'),
                   style: textTheme.titleMedium,
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.coralSoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.auto_awesome_rounded,
-                  size: 12,
-                  color: AppColors.coralStrong,
-                ),
-                SizedBox(width: 4),
-                Text(
-                  'Surprise',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.coralStrong,
-                  ),
                 ),
               ],
             ),

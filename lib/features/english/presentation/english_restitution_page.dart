@@ -5,12 +5,14 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../core/common/widgets/edge_swipe_back.dart';
 import '../application/english_recordings.dart';
 import '../data/practice_session_repository_provider.dart';
 import '../data/topic_catalog.dart';
 import '../domain/practice_session.dart';
+import '../domain/restitution_format.dart';
 import '../english_routes.dart';
-import 'session_frame.dart';
+import 'session_chrome.dart';
 import 'session_navigation.dart';
 import 'voice_recorder_panel.dart';
 
@@ -96,179 +98,291 @@ class _PresentationState extends ConsumerState<_Presentation> {
         ref.watch(recordingsProvider).value?.containsKey(session.id) ?? false;
     // Speaking needs a recording to send; writing, nothing more.
     final canSend = _writing || (recorded && !_recordingBusy);
+    // The design: teal to speak, soft peach to write.
+    final background = _writing ? AppColors.accentSoft : AppColors.highlight;
+    final eyebrowColor = _writing ? AppColors.accentStrong : AppColors.ink;
+    void backToNotes() => context.goNamed(
+      englishTopicRouteName,
+      pathParameters: {englishSessionParameter: session.id},
+    );
 
-    return SessionFrame(
-      background: AppColors.highlight,
-      leaveLabel: '← My notes',
-      onLeave: () => context.goNamed(
-        englishTopicRouteName,
-        pathParameters: {englishSessionParameter: session.id},
-      ),
-      currentStep: 1,
-      startFlex: 4,
-      endFlex: 6,
-      start: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _writing
-                ? 'WRITTEN PRESENTATION'
-                : 'SPOKEN PRESENTATION · '
-                      '${session.format.constraint.toUpperCase()}',
-            style: textTheme.labelSmall?.copyWith(color: AppColors.ink),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            topic.title,
-            style: const TextStyle(
-              fontFamily: displayFontFamily,
-              fontSize: 40,
-              fontWeight: FontWeight.w800,
-              height: 1.02,
-              letterSpacing: -0.8,
-              color: AppColors.ink,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            '${session.format.emoji} ${session.format.summary}. Explain the '
-            'topic in English, as you would to a colleague 💬 Your notes are '
-            'hidden.',
-            style: textTheme.bodyLarge?.copyWith(
-              color: AppColors.ink,
-              fontSize: 17,
-            ),
-          ),
-          if (topic.outline.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.lg + 2),
-            SessionCard(
-              padding: const EdgeInsets.all(AppSpacing.lg + 4),
+    return EdgeSwipeBack(
+      onBack: backToNotes,
+      child: Scaffold(
+        backgroundColor: background,
+        body: SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '🧭 To help you structure it',
-                    style: textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  for (final (index, question) in topic.outline.indexed)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.xs),
-                      child: Text(
-                        '${index + 1}. $question',
-                        style: textTheme.bodyLarge?.copyWith(
-                          color: AppColors.text,
-                          fontWeight: FontWeight.w400,
-                        ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.xl,
+                        AppSpacing.md,
+                        AppSpacing.xl,
+                        AppSpacing.xl,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              RoundIconButton(
+                                key: const ValueKey('session-leave'),
+                                icon: Icons.chevron_left_rounded,
+                                label: 'Back to my notes',
+                                onTap: backToNotes,
+                              ),
+                              Expanded(
+                                child: StepDots(
+                                  current: 1,
+                                  color: _writing
+                                      ? AppColors.accent
+                                      : AppColors.ink,
+                                  trackColor: AppColors.surface,
+                                ),
+                              ),
+                              RoundIconButton(
+                                key: const ValueKey('switch-format'),
+                                icon: _writing
+                                    ? Icons.mic_none_rounded
+                                    : Icons.edit_outlined,
+                                label: _writing
+                                    ? 'Switch to speaking'
+                                    : 'Switch to writing',
+                                // Not mid-take: finish or leave the
+                                // recording first.
+                                onTap: _recordingBusy
+                                    ? null
+                                    : () => setState(() => _writing = !_writing),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.lg + 2),
+                          StepEyebrow(
+                            icon: _writing
+                                ? Icons.edit_outlined
+                                : Icons.mic_none_rounded,
+                            label: _writing
+                                ? 'Step 2 · Write'
+                                : 'Step 2 · Speak · '
+                                      '${session.format.constraint}',
+                            color: eyebrowColor,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            topic.title,
+                            style: const TextStyle(
+                              fontFamily: displayFontFamily,
+                              fontSize: 26,
+                              fontWeight: FontWeight.w800,
+                              height: 1.1,
+                              letterSpacing: -0.3,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm + 2),
+                          Text(
+                            _writing
+                                ? _writingInstruction(session.format)
+                                : '${session.format.label}: explain it in '
+                                      'English, as you would to a colleague. '
+                                      'Your notes are hidden.',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: AppColors.ink,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.lg + 4),
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.lg + 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            child: _writing
+                                ? _Writer(
+                                    controller: _text,
+                                    targetWords: _targetWords(session.format),
+                                  )
+                                : VoiceRecorderPanel(
+                                    session: session,
+                                    onBusyChanged: (busy) =>
+                                        setState(() => _recordingBusy = busy),
+                                  ),
+                          ),
+                          if (topic.outline.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.lg),
+                            _Outline(questions: topic.outline),
+                          ],
+                        ],
                       ),
                     ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      AppSpacing.sm,
+                      AppSpacing.xl,
+                      AppSpacing.md,
+                    ),
+                    child: Column(
+                      children: [
+                        BottomActionButton(
+                          buttonKey: const ValueKey('send-for-feedback'),
+                          label: session.isCompleted
+                              ? 'See the feedback'
+                              : 'Send for feedback',
+                          icon: Icons.send_rounded,
+                          onTap: _sending
+                              ? null
+                              : session.isCompleted
+                              ? () => openSession(context, session)
+                              : canSend
+                              ? _send
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.sm + 2),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.auto_awesome_rounded,
+                              size: 14,
+                              color: AppColors.ink,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                _writing || recorded
+                                    ? 'AI only steps in now.'
+                                    : 'Record your presentation to send it.',
+                                textAlign: TextAlign.center,
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ],
-      ),
-      end: SessionCard(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (_writing)
-              _Writer(controller: _text)
-            else
-              VoiceRecorderPanel(
-                session: session,
-                onBusyChanged: (busy) => setState(() => _recordingBusy = busy),
-              ),
-            const SizedBox(height: AppSpacing.xl),
-            // Wraps rather than overflows on the narrowest phones.
-            Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: AppSpacing.xl,
-              runSpacing: AppSpacing.lg,
-              children: [
-                if (_writing)
-                  _SmallRoundButton(
-                    emoji: '🔁',
-                    label: 'Start again',
-                    onTap: () => _text.clear(),
-                  ),
-                _SmallRoundButton(
-                  key: const ValueKey('switch-format'),
-                  emoji: _writing ? '🎙️' : '✍️',
-                  label: _writing ? 'Switch to speaking' : 'Switch to writing',
-                  // Not mid-take: finish or leave the recording first.
-                  onTap: _recordingBusy
-                      ? null
-                      : () => setState(() => _writing = !_writing),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton(
-              key: const ValueKey('send-for-feedback'),
-              onPressed: _sending
-                  ? null
-                  : session.isCompleted
-                  ? () => openSession(context, session)
-                  : canSend
-                  ? _send
-                  : null,
-              child: Text(
-                session.isCompleted
-                    ? 'See the feedback 🧾'
-                    : 'Send for feedback 📤',
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              _writing
-                  ? '🤖 The AI only steps in now.'
-                  : recorded
-                  ? '🤖 Once sent, your recording is turned into text on this '
-                        'device, then corrected.'
-                  : '🎙️ Record your presentation to send it. It stays on this '
-                        'device.',
-              textAlign: TextAlign.center,
-              style: textTheme.bodySmall,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Writing the presentation instead, with a word count.
-class _Writer extends StatelessWidget {
-  const _Writer({required this.controller});
+/// What to write, from the format drawn.
+String _writingInstruction(RestitutionFormat format) => format.spoken
+    ? 'Write it instead, as a short article for a curious reader.'
+    : '${format.label}, ${format.constraint}, for a curious reader.';
 
-  final TextEditingController controller;
+/// How many words to aim for, when the format says so: "250 to 350 words"
+/// aims for 250. Null when it counts in something else, or nothing.
+int? _targetWords(RestitutionFormat format) {
+  final match = RegExp(
+    r'(\d+)(?: to \d+)? words',
+  ).firstMatch(format.constraint);
+  return match == null ? null : int.parse(match.group(1)!);
+}
+
+/// Questions that help structure the presentation.
+class _Outline extends StatelessWidget {
+  const _Outline({required this.questions});
+
+  final List<String> questions;
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.explore_outlined, size: 18, color: AppColors.ink),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'To help you structure it',
+                style: textTheme.titleMedium?.copyWith(fontSize: 15),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          for (final (index, question) in questions.indexed)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(
+                '${index + 1}. $question',
+                style: textTheme.bodyMedium?.copyWith(color: AppColors.text),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Writing the presentation, without spellcheck or autocorrect, with a word
+/// count.
+class _Writer extends StatelessWidget {
+  const _Writer({required this.controller, required this.targetWords});
+
+  final TextEditingController controller;
+
+  /// Null when the format sets no number of words.
+  final int? targetWords;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final target = targetWords;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('✍️ Your presentation', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: AppSpacing.md),
+        Text(
+          'Your text',
+          style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         TextField(
           key: const ValueKey('written-presentation'),
           controller: controller,
-          minLines: 8,
-          maxLines: 16,
-          decoration: InputDecoration(
+          minLines: 9,
+          maxLines: 20,
+          // So you see your real level.
+          autocorrect: false,
+          enableSuggestions: false,
+          spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
+          style: const TextStyle(
+            fontSize: 16,
+            height: 1.6,
+            color: AppColors.text,
+          ),
+          decoration: const InputDecoration(
             hintText: 'Write it in English, in your own words.',
-            filled: true,
-            fillColor: AppColors.background,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide.none,
-            ),
+            border: InputBorder.none,
+            isCollapsed: true,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.md),
         ListenableBuilder(
           listenable: controller,
           builder: (context, _) {
@@ -276,49 +390,63 @@ class _Writer extends StatelessWidget {
                 .split(RegExp(r'\s+'))
                 .where((word) => word.isNotEmpty)
                 .length;
-            return Text(
-              '$words ${words == 1 ? 'word' : 'words'}',
-              textAlign: TextAlign.end,
-              style: Theme.of(context).textTheme.bodySmall,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text.rich(
+                  TextSpan(
+                    text: '$words',
+                    style: const TextStyle(color: AppColors.primary),
+                    children: [
+                      TextSpan(
+                        text: target == null
+                            ? (words == 1 ? ' word' : ' words')
+                            : ' / $target words',
+                        style: const TextStyle(color: AppColors.textMuted),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (target != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: (words / target).clamp(0.0, 1.0),
+                      minHeight: 6,
+                      color: AppColors.accent,
+                      backgroundColor: AppColors.surfaceMuted,
+                    ),
+                  ),
+                ],
+              ],
             );
           },
         ),
-      ],
-    );
-  }
-}
-
-class _SmallRoundButton extends StatelessWidget {
-  const _SmallRoundButton({
-    super.key,
-    required this.emoji,
-    required this.label,
-    required this.onTap,
-  });
-
-  final String emoji;
-  final String label;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: label,
-      child: Material(
-        color: AppColors.background,
-        shape: const CircleBorder(),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: 64,
-            height: 64,
-            child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 24)),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            const Icon(
+              Icons.shield_outlined,
+              size: 16,
+              color: AppColors.primary,
             ),
-          ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                'Spellcheck and autocorrect are off, so you see your real '
+                'level.',
+                style: textTheme.bodySmall?.copyWith(fontSize: 12),
+              ),
+            ),
+          ],
         ),
-      ),
+      ],
     );
   }
 }

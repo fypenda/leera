@@ -86,6 +86,10 @@ void main() {
       if (!tester.any(_writtenField)) {
         await _tap(tester, find.byKey(const ValueKey('switch-format')));
       }
+      // Written as it comes: no autocorrect, no suggestions.
+      final field = tester.widget<TextField>(_writtenField);
+      expect(field.autocorrect, isFalse);
+      expect(field.enableSuggestions, isFalse);
       await tester.enterText(_writtenField, 'The canal opened in 1869.');
       final send = find.byKey(const ValueKey('send-for-feedback'));
       await tester.ensureVisible(send);

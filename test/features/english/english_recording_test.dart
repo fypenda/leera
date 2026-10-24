@@ -240,7 +240,7 @@ void main() {
 
     await _tap(tester, _key('start-recording'));
     await _speak(tester, recorder, const Duration(seconds: 20));
-    await _tap(tester, find.text('← My notes'));
+    await _tap(tester, _key('session-leave'));
 
     expect(find.byType(EnglishTopicPage), findsOneWidget);
     expect(recorder.cancelled, 1);
