@@ -188,9 +188,7 @@ class _PresentationState extends ConsumerState<_Presentation> {
                           Text(
                             _writing
                                 ? _writingInstruction(session.format)
-                                : '${session.format.label}: explain it in '
-                                      'English, as you would to a colleague. '
-                                      'Your notes are hidden.',
+                                : _speakingInstruction(session.format),
                             style: textTheme.bodyMedium?.copyWith(
                               color: AppColors.ink,
                               fontWeight: FontWeight.w600,
@@ -282,6 +280,24 @@ class _PresentationState extends ConsumerState<_Presentation> {
 }
 
 /// What to write, from the format drawn.
+/// What to do when speaking, for each format. A written format can be
+/// presented aloud too.
+String _speakingInstruction(RestitutionFormat format) {
+  final what = switch (format) {
+    RestitutionFormat.voiceNote =>
+      'Explain it in English, as you would to a colleague.',
+    RestitutionFormat.explainToAChild =>
+      'Explain it to a curious 10-year-old: simple words, concrete examples.',
+    RestitutionFormat.tedIntro =>
+      'Open a talk on it, TED-style: hook your audience from the first '
+          'sentence.',
+    RestitutionFormat.debate =>
+      'Give the arguments for, then against, then where you stand.',
+    _ => 'Say it aloud instead, as you would to a colleague.',
+  };
+  return '$what Your notes are hidden.';
+}
+
 String _writingInstruction(RestitutionFormat format) => format.spoken
     ? 'Write it instead, as a short article for a curious reader.'
     : '${format.label}, ${format.constraint}, for a curious reader.';

@@ -13,6 +13,6 @@ Your job:
 6. Estimate her CEFR level from this text alone.
 7. Ask 1 or 2 follow-up questions that push her to go deeper on the topic.
 8. List in `recurringMistakesSeen` the recurring tags she repeated this time.
-9. Write a `headline` of at most six words with one fitting emoji, and a `summary` of two sentences: the main strength, then the one thing to work on.
+9. Write a `headline` of at most six words, without emoji, and a `summary` of two sentences: the main strength, then the one thing to work on.
 
 Be specific, never generic. Do not praise what does not deserve it. Do not invent mistakes: if a sentence is fine, leave it. Keep explanations short and in English. Never correct quotations, names or numbers she took from her research unless they are wrong English.

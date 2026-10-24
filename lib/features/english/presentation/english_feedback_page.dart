@@ -516,7 +516,7 @@ class _Correction extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              feedback.headline,
+              withoutEmoji(feedback.headline),
               key: const ValueKey('feedback-headline'),
               style: const TextStyle(
                 fontFamily: displayFontFamily,
@@ -570,7 +570,11 @@ class _Correction extends StatelessWidget {
         if (feedback.corrections.isEmpty) ...[
           const SizedBox(height: AppSpacing.sm + 2),
           Text(
-            'Nothing to fix this time. Well done!',
+            // A short take with low scores has nothing to fix, but nothing
+            // to praise either.
+            feedback.scores.average >= 5
+                ? 'Nothing to fix this time. Well done!'
+                : 'No mistakes to point out this time.',
             key: const ValueKey('no-corrections'),
             style: textTheme.bodyMedium,
           ),
@@ -864,3 +868,13 @@ class VocabularyCard extends StatelessWidget {
     );
   }
 }
+
+/// The text without emoji: the design keeps headlines plain, and older
+/// corrections still end with one ("Great explanation 🎤").
+String withoutEmoji(String text) => text
+    .replaceAll(
+      RegExp(r'[\p{Extended_Pictographic}\u{FE0F}\u{200D}]', unicode: true),
+      '',
+    )
+    .replaceAll(RegExp(r'\s{2,}'), ' ')
+    .trim();
