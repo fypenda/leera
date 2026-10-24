@@ -7,16 +7,16 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../core/common/widgets/design/emoji_badge.dart';
-import '../../../core/common/widgets/design/soft_chip.dart';
+import '../../../core/common/widgets/edge_swipe_back.dart';
 import '../../../core/time/clock.dart';
 import '../application/english_sessions.dart';
 import '../data/practice_session_repository_provider.dart';
 import '../data/topic_catalog.dart';
 import '../domain/practice_session.dart';
 import '../domain/practice_session_repository.dart';
+import '../domain/restitution_format.dart';
 import '../english_routes.dart';
-import 'session_frame.dart';
+import 'session_chrome.dart';
 import 'session_navigation.dart';
 
 /// Step 1 of a session: the topic and format drawn at random, the research
@@ -134,141 +134,133 @@ class _ResearchState extends ConsumerState<_Research> {
         .toUtc()
         .difference(session.startedAt);
     final elapsed = sinceStart.isNegative ? Duration.zero : sinceStart;
+    void leave() => context.goNamed(englishRouteName);
 
-    return SessionFrame(
-      leaveLabel: '← English',
-      onLeave: () => context.goNamed(englishRouteName),
-      currentStep: 0,
-      action: session.canReroll
-          ? SessionTopButton(
-              key: const ValueKey('another-topic'),
-              label: '🎲 Another topic',
-              onTap: _busy ? () {} : _anotherTopic,
-            )
-          : null,
-      start: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _TopicCard(
-            title: topic.title,
-            prompt: topic.prompt,
-            categories: topic.categories,
-            emoji: topic.emoji,
-          ),
-          const SizedBox(height: AppSpacing.lg + 4),
-          Wrap(
-            spacing: AppSpacing.lg,
-            runSpacing: AppSpacing.lg,
-            children: [
-              _InfoTile(
-                leading: EmojiBadge(
-                  session.format.emoji,
-                  background: AppColors.coralSoft,
-                  size: 52,
-                ),
-                caption: 'Format drawn by the dice ✨',
-                value: session.format.summary,
-              ),
-              _TimerTile(elapsed: elapsed),
-            ],
-          ),
-        ],
-      ),
-      end: SessionCard(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '📝 My notes',
-                    style: Theme.of(context).textTheme.headlineSmall,
+    return EdgeSwipeBack(
+      onBack: leave,
+      child: Scaffold(
+        body: SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.xl,
+                        AppSpacing.md,
+                        AppSpacing.xl,
+                        AppSpacing.xl,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              RoundIconButton(
+                                key: const ValueKey('session-leave'),
+                                icon: Icons.chevron_left_rounded,
+                                label: 'Back to Today',
+                                onTap: leave,
+                              ),
+                              const Expanded(child: StepDots(current: 0)),
+                              if (session.canReroll)
+                                RoundIconButton(
+                                  key: const ValueKey('another-topic'),
+                                  icon: Icons.casino_outlined,
+                                  label: 'Roll another topic',
+                                  onTap: _busy ? null : _anotherTopic,
+                                )
+                              else
+                                const SizedBox(width: 44),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.lg + 2),
+                          const StepEyebrow(
+                            icon: Icons.search_rounded,
+                            label: 'Step 1 · Research',
+                          ),
+                          const SizedBox(height: AppSpacing.lg + 2),
+                          _TopicCard(
+                            title: topic.title,
+                            prompt: topic.prompt,
+                            categories: topic.categories,
+                          ),
+                          const SizedBox(height: AppSpacing.lg + 2),
+                          _FormatRow(format: session.format),
+                          const SizedBox(height: AppSpacing.lg + 2),
+                          _NotesCard(
+                            controller: _notes,
+                            onChanged: _notesChanged,
+                          ),
+                          const SizedBox(height: AppSpacing.lg + 2),
+                          _ResearchTimer(elapsed: elapsed),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                const SoftChip(
-                  '🚫🤖 No AI',
-                  background: AppColors.primarySoft,
-                  foreground: AppColors.primary,
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            TextField(
-              key: const ValueKey('research-notes'),
-              controller: _notes,
-              onChanged: _notesChanged,
-              minLines: 8,
-              maxLines: 14,
-              style: const TextStyle(
-                fontSize: 16,
-                height: 1.6,
-                color: AppColors.text,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Write down what you find, in English.',
-                filled: true,
-                fillColor: AppColors.background,
-                contentPadding: const EdgeInsets.all(AppSpacing.lg + 4),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      AppSpacing.sm,
+                      AppSpacing.xl,
+                      AppSpacing.lg,
+                    ),
+                    child: BottomActionButton(
+                      key: const ValueKey('done-researching'),
+                      label: "I'm ready, let's explain",
+                      icon: Icons.arrow_forward_rounded,
+                      onTap: _busy ? null : _doneResearching,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Research away from the app, then come back to present. '
-              'Your notes are saved as you write.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: AppSpacing.lg + 4),
-            FilledButton(
-              key: const ValueKey('done-researching'),
-              onPressed: _busy ? null : _doneResearching,
-              child: const Text("I'm done, let's present 🚀"),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
+/// The topic drawn: its categories, title and what to find out, on the
+/// design's peach card.
 class _TopicCard extends StatelessWidget {
   const _TopicCard({
     required this.title,
     required this.prompt,
     required this.categories,
-    required this.emoji,
   });
 
   final String title;
   final String prompt;
   final List<String> categories;
-  final String emoji;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       clipBehavior: Clip.antiAlias,
-      constraints: const BoxConstraints(minHeight: 320),
       decoration: BoxDecoration(
         color: AppColors.accent,
-        borderRadius: BorderRadius.circular(AppRadii.xl),
+        borderRadius: BorderRadius.circular(28),
       ),
       child: Stack(
         children: [
-          Positioned(
-            right: -20,
-            bottom: -36,
+          const Positioned(
+            right: -30,
+            bottom: -34,
             child: ExcludeSemantics(
-              child: Text(emoji, style: const TextStyle(fontSize: 150)),
+              child: Icon(
+                Icons.public_rounded,
+                size: 150,
+                color: Color(0x2E24323A),
+              ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -277,33 +269,35 @@ class _TopicCard extends StatelessWidget {
                   runSpacing: AppSpacing.sm,
                   children: [
                     for (final category in categories)
-                      SoftChip(category, background: AppColors.surface),
+                      _Chip(label: categoryName(category)),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.md + 2),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
+                  constraints: const BoxConstraints(maxWidth: 300),
                   child: Text(
                     title,
                     key: const ValueKey('topic-title'),
                     style: const TextStyle(
                       fontFamily: displayFontFamily,
-                      fontSize: 40,
+                      fontSize: 30,
                       fontWeight: FontWeight.w800,
-                      height: 1.02,
-                      letterSpacing: -0.8,
+                      height: 1.05,
+                      letterSpacing: -0.6,
                       color: AppColors.ink,
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.md + 2),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 330),
+                  constraints: const BoxConstraints(maxWidth: 260),
                   child: Text(
                     prompt,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.ink,
-                      fontSize: 17,
                     ),
                   ),
                 ),
@@ -316,41 +310,101 @@ class _TopicCard extends StatelessWidget {
   }
 }
 
-/// A small white tile, a badge and two lines of text.
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({
-    required this.leading,
-    required this.caption,
-    required this.value,
-  });
+/// A category without its emoji: "🏛️ History" is shown as "History".
+String categoryName(String category) {
+  final space = category.indexOf(' ');
+  return space < 0 ? category : category.substring(space + 1).trim();
+}
 
-  final Widget leading;
-  final String caption;
-  final String value;
+class _Chip extends StatelessWidget {
+  const _Chip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w800,
+        color: AppColors.ink,
+      ),
+    ),
+  );
+}
+
+/// The format the dice chose: spoken or written, and how long.
+class _FormatRow extends StatelessWidget {
+  const _FormatRow({required this.format});
+
+  final RestitutionFormat format;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      width: 250,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
         children: [
-          leading,
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.coralSoft,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              format.spoken ? Icons.mic_none_rounded : Icons.edit_outlined,
+              color: AppColors.coralStrong,
+            ),
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(caption, style: textTheme.bodySmall),
+                Text('Rolled format', style: textTheme.bodySmall),
                 Text(
-                  value,
-                  style: textTheme.titleMedium?.copyWith(fontSize: 17),
+                  format.summary,
+                  key: const ValueKey('topic-format'),
+                  style: textTheme.titleMedium,
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.coralSoft,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 12,
+                  color: AppColors.coralStrong,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  'Surprise',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.coralStrong,
+                  ),
                 ),
               ],
             ),
@@ -361,34 +415,171 @@ class _InfoTile extends StatelessWidget {
   }
 }
 
-class _TimerTile extends StatelessWidget {
-  const _TimerTile({required this.elapsed});
+/// The notes, taken without AI and saved as they are written.
+class _NotesCard extends StatelessWidget {
+  const _NotesCard({required this.controller, required this.onChanged});
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.edit_outlined, size: 18, color: AppColors.ink),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'My notes',
+                  style: textTheme.titleMedium?.copyWith(fontSize: 15),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'AI-free',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md - 2),
+          TextField(
+            key: const ValueKey('research-notes'),
+            controller: controller,
+            onChanged: onChanged,
+            minLines: 5,
+            maxLines: 12,
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.5,
+              color: AppColors.text,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Write down what you find, in English.',
+              filled: true,
+              fillColor: AppColors.background,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Research away from the app, then come back. Your notes are '
+            'saved as you write.',
+            style: textTheme.bodySmall?.copyWith(fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// How long the research has taken, out of the time it is given.
+class _ResearchTimer extends StatelessWidget {
+  const _ResearchTimer({required this.elapsed});
 
   /// Time since the research started.
   final Duration elapsed;
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     final over = elapsed >= researchTime;
     final shown = over ? researchTime : elapsed;
 
-    return _InfoTile(
-      leading: SizedBox(
-        width: 52,
-        height: 52,
-        child: CircularProgressIndicator(
-          value: shown.inSeconds / researchTime.inSeconds,
-          strokeWidth: 6,
-          strokeCap: StrokeCap.round,
-          color: over ? AppColors.accent : AppColors.highlight,
-          backgroundColor: AppColors.surfaceMuted,
-          semanticsLabel: 'Research time used',
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.timer_outlined,
+                      size: 14,
+                      color: AppColors.textMuted,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      over ? "Time's up: present when ready" : 'Research time',
+                      style: textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                Text.rich(
+                  key: const ValueKey('research-time'),
+                  TextSpan(
+                    text: clock(shown),
+                    children: [
+                      TextSpan(
+                        text: ' / ${clock(researchTime)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                  style: const TextStyle(
+                    fontFamily: displayFontFamily,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    color: AppColors.text,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 56,
+            height: 56,
+            child: CircularProgressIndicator(
+              value: shown.inSeconds / researchTime.inSeconds,
+              strokeWidth: 6,
+              strokeCap: StrokeCap.round,
+              color: over ? AppColors.accent : AppColors.highlight,
+              backgroundColor: AppColors.surfaceMuted,
+              semanticsLabel: 'Research time used',
+            ),
+          ),
+        ],
       ),
-      caption: over ? "⏱️ Time's up" : '⏱️ Research',
-      value: over
-          ? 'Present when ready'
-          : '${clock(shown)} / ${clock(researchTime)}',
     );
   }
 }

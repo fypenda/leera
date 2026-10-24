@@ -154,6 +154,20 @@ void main() {
     expect(_topicTitle(tester), title);
   });
 
+  appTest('the research page shows the format and the time', (tester) async {
+    await _pumpApp(tester, iPhonePortrait);
+    await _drawTopic(tester);
+
+    expect(find.byKey(const ValueKey('topic-format')), findsOneWidget);
+    expect(find.textContaining('00:00 / 20:00'), findsOneWidget);
+    expect(find.text("I'm ready, let's explain"), findsOneWidget);
+  });
+
+  test('a category is shown without its emoji', () {
+    expect(categoryName('🏛️ History'), 'History');
+    expect(categoryName('Science'), 'Science');
+  });
+
   appTest('a swipe from the left edge leaves a session', (tester) async {
     await _pumpApp(tester, iPadLandscape);
     await _drawTopic(tester);
