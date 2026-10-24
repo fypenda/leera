@@ -122,7 +122,7 @@ void main() {
     await _tap(tester, find.byKey(const ValueKey('open-account')));
 
     expect(find.byType(AccountPage), findsOneWidget);
-    expect(find.text('Leera Plus ✨'), findsOneWidget);
+    expect(find.text('Leera Plus'), findsOneWidget);
     expect(find.text('2 corrections left today'), findsOneWidget);
 
     await _tap(tester, find.byKey(const ValueKey('account-leave')));
