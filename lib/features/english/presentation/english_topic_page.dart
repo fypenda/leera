@@ -311,10 +311,7 @@ class _TopicCard extends StatelessWidget {
 }
 
 /// A category without its emoji: "🏛️ History" is shown as "History".
-String categoryName(String category) {
-  final space = category.indexOf(' ');
-  return space < 0 ? category : category.substring(space + 1).trim();
-}
+String categoryName(String category) => themeName(category);
 
 class _Chip extends StatelessWidget {
   const _Chip({required this.label});

@@ -9,6 +9,7 @@ import '../data/topic_catalog.dart';
 import '../domain/practice_session.dart';
 import '../domain/practice_session_repository.dart';
 import '../domain/practice_stats.dart';
+import '../domain/practice_topic.dart';
 import '../domain/session_draw.dart';
 
 /// Every practice session, the latest started first. Emits again whenever
@@ -55,15 +56,21 @@ class PracticeSessionActions {
   final Random _random;
 
   /// Starts a session on a topic and format drawn at random, avoiding the
-  /// latest topics.
-  Future<PracticeSession> start() async {
+  /// latest topics, and from [themes] when there are some.
+  Future<PracticeSession> start({Set<String> themes = const {}}) async {
     final drawn = drawSession(
       catalog: topicCatalog,
       recentTopicIds: await _recentTopicIds(),
       random: _random,
+      themes: themes,
     );
     return _repository.start(topicId: drawn.topic.id, format: drawn.format);
   }
+
+  /// Starts a session on [topic], chosen rather than drawn; its format is
+  /// still drawn.
+  Future<PracticeSession> startOn(PracticeTopic topic) =>
+      _repository.start(topicId: topic.id, format: drawFormat(_random));
 
   /// Draws the session's one other topic, never the one it has now.
   Future<PracticeSession> reroll(PracticeSession session) async {

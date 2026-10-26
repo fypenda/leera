@@ -20,3 +20,10 @@ const journalRouteName = 'journal';
 
 /// Reviewing the words kept, full screen.
 const reviewRouteName = 'review';
+
+/// The Explore tab, and a theme in it.
+const exploreRouteName = 'explore';
+const exploreThemeRouteName = 'explore-theme';
+
+/// The path parameter of the theme route: the theme's name.
+const exploreThemeParameter = 'theme';

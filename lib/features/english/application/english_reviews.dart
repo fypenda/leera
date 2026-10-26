@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/word_review_repository_provider.dart';
+import '../data/preference_repository_providers.dart';
 import '../domain/kept_words.dart';
 import '../domain/word_review.dart';
 import 'english_feedback.dart';

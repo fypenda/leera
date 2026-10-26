@@ -14,6 +14,7 @@ const spokenChance = 0.6;
 
 /// A topic and a format, drawn at random from [catalog].
 ///
+/// With [themes], only topics in one of them are drawn, unless none is.
 /// Topics among [recentTopicIds] (the latest first; only the first
 /// [recentTopicsAvoided] count) and [excluding] are left out. If that would
 /// leave nothing, only [excluding] is left out, and if even that leaves
@@ -23,8 +24,16 @@ const spokenChance = 0.6;
   required Iterable<String> recentTopicIds,
   required Random random,
   String? excluding,
+  Set<String> themes = const {},
 }) {
   if (catalog.isEmpty) throw ArgumentError('There is no topic to draw.');
+  if (themes.isNotEmpty) {
+    final inThemes = [
+      for (final topic in catalog)
+        if (topic.themes.any(themes.contains)) topic,
+    ];
+    if (inThemes.isNotEmpty) catalog = inThemes;
+  }
 
   final recent = recentTopicIds.take(recentTopicsAvoided).toSet();
   var candidates = [
@@ -40,10 +49,15 @@ const spokenChance = 0.6;
   if (candidates.isEmpty) candidates = catalog;
 
   final topic = candidates[random.nextInt(candidates.length)];
+  return (topic: topic, format: drawFormat(random));
+}
+
+/// A format drawn at random, spoken more often than written.
+RestitutionFormat drawFormat(Random random) {
   final spoken = random.nextDouble() < spokenChance;
   final formats = [
     for (final format in RestitutionFormat.values)
       if (format.spoken == spoken) format,
   ];
-  return (topic: topic, format: formats[random.nextInt(formats.length)]);
+  return formats[random.nextInt(formats.length)];
 }

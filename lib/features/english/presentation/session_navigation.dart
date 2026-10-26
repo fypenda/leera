@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/common/widgets/load_failure.dart';
 import '../application/english_sessions.dart';
+import '../application/english_themes.dart';
 import '../domain/practice_session.dart';
+import '../domain/practice_topic.dart';
 import '../english_routes.dart';
 
 /// The route of the step a session is at.
@@ -22,7 +24,8 @@ void openSession(BuildContext context, PracticeSession session) =>
     );
 
 /// Continues the session in progress, or starts a new one on a topic drawn
-/// at random. Says so if the new session could not be saved.
+/// at random, from the themes chosen if any. Says so if the new session
+/// could not be saved.
 Future<void> startOrContinueSession(BuildContext context, WidgetRef ref) async {
   final inProgress = ref.read(sessionInProgressProvider).value;
   if (inProgress != null) {
@@ -31,7 +34,9 @@ Future<void> startOrContinueSession(BuildContext context, WidgetRef ref) async {
   }
   final messenger = ScaffoldMessenger.of(context);
   try {
-    final session = await ref.read(practiceSessionActionsProvider).start();
+    final session = await ref
+        .read(practiceSessionActionsProvider)
+        .start(themes: ref.read(dailyThemesProvider));
     if (context.mounted) openSession(context, session);
   } on Object {
     messenger
@@ -101,5 +106,27 @@ class SessionLoader extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+/// Starts a session on [topic], chosen in Explore. Says so if it could not
+/// be saved. The caller makes sure no session is in progress.
+Future<void> startSessionOn(
+  BuildContext context,
+  WidgetRef ref,
+  PracticeTopic topic,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    final session = await ref
+        .read(practiceSessionActionsProvider)
+        .startOn(topic);
+    if (context.mounted) openSession(context, session);
+  } on Object {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('The session could not be started.')),
+      );
   }
 }

@@ -8,6 +8,8 @@ import '../features/english/presentation/english_feedback_page.dart';
 import '../features/english/presentation/english_page.dart';
 import '../features/english/presentation/english_restitution_page.dart';
 import '../features/english/presentation/english_topic_page.dart';
+import '../features/english/presentation/explore_page.dart';
+import '../features/english/presentation/explore_theme_page.dart';
 import '../features/english/presentation/journal_page.dart';
 import '../features/english/presentation/progress_page.dart';
 import '../features/english/presentation/review_page.dart';
@@ -19,7 +21,8 @@ import 'plus/plus_page.dart';
 const _startingPath = '/starting';
 const _signInPath = '/sign-in';
 
-/// The app's routes: signing in, the tabs (Today, Journal, Progress), the three
+/// The app's routes: signing in, the tabs (Today, Explore, Journal,
+/// Progress), the three
 /// steps of a session, the account and Leera Plus.
 ///
 /// Signed out, every address leads to signing in; signed in, signing in
@@ -62,7 +65,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: signInRouteName,
         builder: (context, state) => const SignInPage(),
       ),
-      // The tabs: Today, Journal and Progress.
+      // The tabs: Today, Explore, Journal and Progress.
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => MainShell(shell: shell),
         branches: [
@@ -72,6 +75,24 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/',
                 name: englishRouteName,
                 builder: (context, state) => const EnglishPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/explore',
+                name: exploreRouteName,
+                builder: (context, state) => const ExplorePage(),
+                routes: [
+                  GoRoute(
+                    path: ':$exploreThemeParameter',
+                    name: exploreThemeRouteName,
+                    builder: (context, state) => ExploreThemePage(
+                      theme: state.pathParameters[exploreThemeParameter]!,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -3,10 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import 'theme/app_colors.dart';
 
-/// The tabs at the bottom of the main pages: Today, Journal and Progress.
-///
-/// The Leera design also has Explore, between Today and Journal; it joins
-/// the bar once it exists. Each tab keeps its own page, scrolled where it was.
+/// The tabs at the bottom of the main pages: Today, Explore, Journal and
+/// Progress, as in the Leera design. Each tab keeps its own page, scrolled
+/// where it was.
 class MainShell extends StatelessWidget {
   const MainShell({super.key, required this.shell});
 
@@ -14,6 +13,7 @@ class MainShell extends StatelessWidget {
 
   static const _tabs = [
     (key: 'nav-today', label: 'Today', icon: Icons.wb_sunny_outlined),
+    (key: 'nav-explore', label: 'Explore', icon: Icons.explore_outlined),
     (key: 'nav-journal', label: 'Journal', icon: Icons.menu_book_outlined),
     (key: 'nav-progress', label: 'Progress', icon: Icons.bar_chart_rounded),
   ];

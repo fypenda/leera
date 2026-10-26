@@ -29,4 +29,13 @@ class PracticeTopic {
 
   /// Questions that help structure the presentation.
   final List<String> outline;
+
+  /// Its themes: the categories without their emoji ("History").
+  List<String> get themes => [for (final c in categories) themeName(c)];
+}
+
+/// A category without its emoji: "🏛️ History" is the theme "History".
+String themeName(String category) {
+  final space = category.indexOf(' ');
+  return space < 0 ? category : category.substring(space + 1).trim();
 }

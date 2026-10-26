@@ -6,11 +6,12 @@ import 'package:leera/features/english/domain/practice_topic.dart';
 import 'package:leera/features/english/domain/restitution_format.dart';
 import 'package:leera/features/english/domain/session_draw.dart';
 
-PracticeTopic _topic(String id) => PracticeTopic(
+PracticeTopic _topic(String id, [List<String> categories = const []]) =>
+    PracticeTopic(
   id: id,
   title: id,
   prompt: '',
-  categories: const [],
+  categories: categories,
   emoji: '📝',
   outline: const [],
 );
@@ -135,6 +136,46 @@ void main() {
     test('a topic no longer in the catalog is still shown', () {
       expect(topicById('suez-canal').title, contains('Suez'));
       expect(topicById('gone').title, 'A topic no longer in the list');
+    });
+  });
+
+  group('themes', () {
+    final themed = [
+      _topic('art', ['🎨 Arts & culture']),
+      _topic('cells', ['🔬 Science', '🩺 Health']),
+      _topic('coins', ['💰 Economy']),
+    ];
+
+    test('only topics in the chosen themes are drawn', () {
+      final random = Random(3);
+      final drawn = {
+        for (var i = 0; i < 200; i++)
+          drawSession(
+            catalog: themed,
+            recentTopicIds: const [],
+            random: random,
+            themes: const {'Health', 'Arts & culture'},
+          ).topic.id,
+      };
+      expect(drawn, {'art', 'cells'});
+    });
+
+    test('themes with no topic draw from every topic', () {
+      final random = Random(4);
+      final drawn = {
+        for (var i = 0; i < 200; i++)
+          drawSession(
+            catalog: themed,
+            recentTopicIds: const [],
+            random: random,
+            themes: const {'Sport'},
+          ).topic.id,
+      };
+      expect(drawn, {'art', 'cells', 'coins'});
+    });
+
+    test('a topic knows its themes, without emoji', () {
+      expect(themed[1].themes, ['Science', 'Health']);
     });
   });
 }

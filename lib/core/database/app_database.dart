@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import 'converters.dart';
 import 'tables/practice_sessions.dart';
+import 'tables/preferred_themes.dart';
 import 'tables/session_feedbacks.dart';
 import 'tables/session_recordings.dart';
 import 'tables/word_reviews.dart';
@@ -14,7 +15,13 @@ part 'app_database.g.dart';
 /// Only data sources and repositories may use this class. Widgets get their
 /// data from providers that expose domain objects.
 @DriftDatabase(
-  tables: [PracticeSessions, SessionFeedbacks, SessionRecordings, WordReviews],
+  tables: [
+    PracticeSessions,
+    SessionFeedbacks,
+    SessionRecordings,
+    WordReviews,
+    PreferredThemes,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   /// Takes its connection as an argument so tests can pass an in-memory or
@@ -28,13 +35,14 @@ class AppDatabase extends _$AppDatabase {
   /// - 1: practice_sessions, session_feedbacks and session_recordings
   ///   (carried over from the Nourish app, where they reached this shape).
   /// - 2: word_reviews, for reviewing the words kept.
+  /// - 3: preferred_themes, the themes the daily topic is drawn from.
   ///
   /// Any change to a table means adding 1 here, writing the step that takes
   /// existing databases to the new version in [migration], recording the new
   /// schema with `dart run drift_dev make-migrations` and testing the step
   /// with real rows. Do not raise this number for any other reason.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -43,8 +51,10 @@ class AppDatabase extends _$AppDatabase {
       // A version this build cannot migrate (a file written by a newer
       // build) must fail here, leaving the file untouched. Never drop or
       // recreate tables to get past a migration: that destroys user data.
-      if (from == 1 && to == 2) {
-        await m.createTable(wordReviews);
+      if (from >= 1 && from < to && to == 3) {
+        // Each step in turn, from the file's version up.
+        if (from < 2) await m.createTable(wordReviews);
+        if (from < 3) await m.createTable(preferredThemes);
         return;
       }
       throw StateError(

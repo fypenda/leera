@@ -333,8 +333,8 @@ class _Perks extends StatelessWidget {
       background: AppColors.accentSoft,
       foreground: AppColors.accentStrong,
       title: 'Pick your themes',
-      detail: 'Science, history, culture, business…',
-      soon: true,
+      detail: 'Your daily topic, from the themes you choose',
+      soon: false,
     ),
     (
       icon: Icons.bookmark_border_rounded,

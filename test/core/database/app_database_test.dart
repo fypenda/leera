@@ -38,9 +38,9 @@ void main() {
     setUp(() => db = AppDatabase(NativeDatabase.memory()));
     tearDown(() => db.close());
 
-    test('is created at schema version 2 with foreign keys enforced', () async {
-      expect(db.schemaVersion, 2);
-      expect(await _pragma(db, 'user_version'), 2);
+    test('is created at schema version 3 with foreign keys enforced', () async {
+      expect(db.schemaVersion, 3);
+      expect(await _pragma(db, 'user_version'), 3);
       expect(await _pragma(db, 'foreign_keys'), 1);
     });
 
@@ -86,25 +86,34 @@ void main() {
       addTearDown(reopened.close);
 
       expect(await _readNotes(reopened), ['still here']);
-      expect(await _pragma(reopened, 'user_version'), 2);
+      expect(await _pragma(reopened, 'user_version'), 3);
     });
 
-    test('a version 1 file gains word_reviews and keeps its data', () async {
-      // A version 1 file: the current schema without word_reviews.
-      final current = AppDatabase(NativeDatabase(file));
-      await _createScratchTable(current);
-      await _insertNote(current, 'kept');
-      await current.customStatement('DROP TABLE word_reviews');
-      await current.customStatement('PRAGMA user_version = 1');
-      await current.close();
+    for (final (version, dropped) in [
+      (1, ['word_reviews', 'preferred_themes']),
+      (2, ['preferred_themes']),
+    ]) {
+      test('a version $version file is brought up and keeps its data', () async {
+        // A file at that version: the current schema without the tables
+        // added since.
+        final current = AppDatabase(NativeDatabase(file));
+        await _createScratchTable(current);
+        await _insertNote(current, 'kept');
+        for (final table in dropped) {
+          await current.customStatement('DROP TABLE $table');
+        }
+        await current.customStatement('PRAGMA user_version = $version');
+        await current.close();
 
-      final migrated = AppDatabase(NativeDatabase(file));
-      addTearDown(migrated.close);
+        final migrated = AppDatabase(NativeDatabase(file));
+        addTearDown(migrated.close);
 
-      expect(await _readNotes(migrated), ['kept']);
-      expect(await _pragma(migrated, 'user_version'), 2);
-      expect(await migrated.select(migrated.wordReviews).get(), isEmpty);
-    });
+        expect(await _readNotes(migrated), ['kept']);
+        expect(await _pragma(migrated, 'user_version'), 3);
+        expect(await migrated.select(migrated.wordReviews).get(), isEmpty);
+        expect(await migrated.select(migrated.preferredThemes).get(), isEmpty);
+      });
+    }
 
     test(
       'refuses an unknown schema version and leaves the data alone',
@@ -118,7 +127,7 @@ void main() {
         final fromTheFuture = AppDatabase(
           NativeDatabase(
             file,
-            setup: (raw) => raw.execute('PRAGMA user_version = 3'),
+            setup: (raw) => raw.execute('PRAGMA user_version = 4'),
           ),
         );
         addTearDown(fromTheFuture.close);
@@ -143,7 +152,7 @@ void main() {
         addTearDown(inspected.close);
         await expectLater(_readNotes(inspected), throwsStateError);
 
-        expect(version, 3);
+        expect(version, 4);
         expect(notes, ['kept']);
       },
     );
