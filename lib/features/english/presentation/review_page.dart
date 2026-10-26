@@ -234,7 +234,18 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
                     label: 'Vocabulary review',
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Expanded(child: SingleChildScrollView(child: body)),
+                  // The card fills the height left, as a flashcard; it
+                  // scrolls only when its text is longer than the screen.
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, box) => SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: box.maxHeight),
+                          child: body,
+                        ),
+                      ),
+                    ),
+                  ),
                   if (bottom != null) ...[
                     const SizedBox(height: AppSpacing.md),
                     bottom,
@@ -282,7 +293,6 @@ class _Card extends StatelessWidget {
 
     return Container(
       key: ValueKey('review-card-${word.key}'),
-      constraints: const BoxConstraints(minHeight: 280),
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
         color: AppColors.surface,
