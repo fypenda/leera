@@ -1,11 +1,15 @@
 import '../domain/practice_topic.dart';
+import 'topic_bank.dart';
 
 /// The topics a session can draw, bundled with the app.
 ///
 /// Sessions store a topic's id: never change or reuse one. A topic can be
 /// added at any time; one that is removed still has to be found for the
 /// sessions that drew it, which [topicById] handles.
-const topicCatalog = [
+const topicCatalog = [..._firstTopics, ...moreTopics];
+
+/// The topics the app started with, carried over from NOURISH.
+const _firstTopics = [
   PracticeTopic(
     id: 'suez-canal',
     title: 'How the Suez Canal changed world trade',

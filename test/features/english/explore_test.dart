@@ -119,7 +119,7 @@ void main() {
       {'Philosophy'},
     );
 
-    // The daily topic, from Today: the one philosophy topic.
+    // The daily topic, from Today: a philosophy topic.
     await _tap(tester, _key('nav-today'));
     await _tap(tester, find.text('Roll my topic →'));
     final topic = topicById((await _stored(tester, container)).single.topicId);

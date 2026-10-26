@@ -71,4 +71,4 @@ The backend: see [`backend/README.md`](backend/README.md).
   subscription. Publish both pages, then link them there.
 - Revoke the Sign in with Apple tokens when an account is deleted (see
   `backend/README.md`).
-- Onboarding (level, interests), a larger topic bank, streak.
+- Onboarding (level, interests).
