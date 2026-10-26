@@ -156,6 +156,8 @@ class _TopicTile extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: () => showModalBottomSheet<void>(
           context: context,
+          // Above the tab bar, not under it.
+          useRootNavigator: true,
           isScrollControlled: true,
           backgroundColor: AppColors.background,
           shape: const RoundedRectangleBorder(

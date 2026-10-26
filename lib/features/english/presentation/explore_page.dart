@@ -211,6 +211,8 @@ class _DailyThemesCard extends ConsumerWidget {
         onTap: allowed
             ? () => showModalBottomSheet<void>(
                 context: context,
+                // Above the tab bar, not under it.
+                useRootNavigator: true,
                 isScrollControlled: true,
                 backgroundColor: AppColors.background,
                 shape: const RoundedRectangleBorder(
