@@ -9,6 +9,7 @@ import '../../../core/auth/auth_actions.dart';
 import '../../../core/auth/quota.dart';
 import '../../../core/auth/session.dart';
 import '../../../core/common/widgets/load_failure.dart';
+import '../../../core/settings/settings.dart';
 import '../../../core/time/calendar_date.dart';
 import '../../../core/time/clock.dart';
 import '../../../core/time/date_formatting.dart';
@@ -100,7 +101,14 @@ class EnglishPage extends ConsumerWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: _LevelTile(level: history?.level)),
+                      Expanded(
+                        child: _LevelTile(
+                          level: history?.level,
+                          selfAssessed: ref
+                              .watch(selfAssessedLevelProvider)
+                              .value,
+                        ),
+                      ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: _WordsTile(words: history?.vocabulary.length ?? 0),
@@ -324,14 +332,17 @@ class _Day extends StatelessWidget {
 
 /// The level of the latest correction, on the way to C1.
 class _LevelTile extends StatelessWidget {
-  const _LevelTile({required this.level});
+  const _LevelTile({required this.level, required this.selfAssessed});
 
   /// Null before the first correction.
   final String? level;
 
+  /// The level given in the welcome, shown until then.
+  final String? selfAssessed;
+
   @override
   Widget build(BuildContext context) {
-    final level = this.level;
+    final level = this.level ?? selfAssessed;
     return _Tile(
       icon: Icons.trending_up_rounded,
       iconColor: AppColors.primary,
@@ -344,6 +355,8 @@ class _LevelTile extends StatelessWidget {
             ),
       subtitle: level == null
           ? 'Estimated after your first correction'
+          : this.level == null
+          ? 'Your estimate · Goal: C1'
           : 'Goal: C1',
       progress: level == null ? 0 : progressTowardsC1(level),
       barColor: AppColors.highlight,

@@ -13,6 +13,7 @@ import 'package:leera/core/audio/voice_recorder.dart';
 import 'package:leera/core/auth/apple_sign_in.dart';
 import 'package:leera/core/auth/session.dart';
 import 'package:leera/core/database/database_provider.dart';
+import 'package:leera/core/settings/settings.dart';
 import 'package:leera/core/time/clock.dart';
 
 import 'fake_ai.dart';
@@ -25,8 +26,9 @@ const iPhonePortrait = Size(390, 844);
 /// Starts the whole app in a window of [size], on Monday 5 October 2026.
 ///
 /// The app gets an empty in-memory database unless [connection] is given.
-/// It is signed in unless [sessions] says otherwise, and its backend is a
-/// [FakeBackendClient] unless [backend] is given.
+/// It is signed in unless [sessions] says otherwise, past the welcome unless
+/// [welcomed] is false, and its backend is a [FakeBackendClient] unless
+/// [backend] is given.
 Future<ProviderContainer> pumpEnglishApp(
   WidgetTester tester,
   Size size, {
@@ -39,6 +41,7 @@ Future<ProviderContainer> pumpEnglishApp(
   AudioPlayback? player,
   RecordingFiles? recordingFiles,
   Transcriber? transcriber,
+  bool welcomed = true,
   List<Override> overrides = const [],
 }) async {
   tester.view.devicePixelRatio = 1;
@@ -72,6 +75,9 @@ Future<ProviderContainer> pumpEnglishApp(
         transcriberProvider.overrideWithValue(
           transcriber ?? FakeTranscriber(),
         ),
+        // Past the welcome, unless the test is about it.
+        if (welcomed)
+          welcomeDoneProvider.overrideWith((ref) => Stream.value(true)),
         ...overrides,
       ],
       child: const EnglishApp(),

@@ -23,7 +23,14 @@ class ExplorePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themes = ref.watch(catalogThemesProvider);
+    // The themes the person likes come first, on any plan.
+    final liked = ref.watch(preferredThemesProvider).value ?? const {};
+    final themes = [
+      for (final theme in ref.watch(catalogThemesProvider))
+        if (liked.contains(theme.$1)) theme,
+      for (final theme in ref.watch(catalogThemesProvider))
+        if (!liked.contains(theme.$1)) theme,
+    ];
     final done = {
       for (final session
           in ref.watch(practiceStatsProvider).value?.completed ?? const [])

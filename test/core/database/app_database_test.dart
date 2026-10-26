@@ -38,9 +38,9 @@ void main() {
     setUp(() => db = AppDatabase(NativeDatabase.memory()));
     tearDown(() => db.close());
 
-    test('is created at schema version 3 with foreign keys enforced', () async {
-      expect(db.schemaVersion, 3);
-      expect(await _pragma(db, 'user_version'), 3);
+    test('is created at schema version 4 with foreign keys enforced', () async {
+      expect(db.schemaVersion, 4);
+      expect(await _pragma(db, 'user_version'), 4);
       expect(await _pragma(db, 'foreign_keys'), 1);
     });
 
@@ -86,12 +86,13 @@ void main() {
       addTearDown(reopened.close);
 
       expect(await _readNotes(reopened), ['still here']);
-      expect(await _pragma(reopened, 'user_version'), 3);
+      expect(await _pragma(reopened, 'user_version'), 4);
     });
 
     for (final (version, dropped) in [
-      (1, ['word_reviews', 'preferred_themes']),
-      (2, ['preferred_themes']),
+      (1, ['word_reviews', 'preferred_themes', 'app_settings']),
+      (2, ['preferred_themes', 'app_settings']),
+      (3, ['app_settings']),
     ]) {
       test('a version $version file is brought up and keeps its data', () async {
         // A file at that version: the current schema without the tables
@@ -109,9 +110,10 @@ void main() {
         addTearDown(migrated.close);
 
         expect(await _readNotes(migrated), ['kept']);
-        expect(await _pragma(migrated, 'user_version'), 3);
+        expect(await _pragma(migrated, 'user_version'), 4);
         expect(await migrated.select(migrated.wordReviews).get(), isEmpty);
         expect(await migrated.select(migrated.preferredThemes).get(), isEmpty);
+        expect(await migrated.select(migrated.appSettings).get(), isEmpty);
       });
     }
 
@@ -127,7 +129,7 @@ void main() {
         final fromTheFuture = AppDatabase(
           NativeDatabase(
             file,
-            setup: (raw) => raw.execute('PRAGMA user_version = 4'),
+            setup: (raw) => raw.execute('PRAGMA user_version = 5'),
           ),
         );
         addTearDown(fromTheFuture.close);
@@ -152,7 +154,7 @@ void main() {
         addTearDown(inspected.close);
         await expectLater(_readNotes(inspected), throwsStateError);
 
-        expect(version, 4);
+        expect(version, 5);
         expect(notes, ['kept']);
       },
     );

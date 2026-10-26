@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/auth/session.dart';
+import '../core/settings/settings.dart';
 import '../features/english/english_routes.dart';
 import '../features/english/presentation/english_feedback_page.dart';
 import '../features/english/presentation/english_page.dart';
@@ -17,16 +18,19 @@ import 'account/account_page.dart';
 import 'account/sign_in_page.dart';
 import 'main_shell.dart';
 import 'plus/plus_page.dart';
+import 'welcome/welcome_page.dart';
 
 const _startingPath = '/starting';
 const _signInPath = '/sign-in';
+const _welcomePath = '/welcome';
 
 /// The app's routes: signing in, the tabs (Today, Explore, Journal,
 /// Progress), the three
 /// steps of a session, the account and Leera Plus.
 ///
-/// Signed out, every address leads to signing in; signed in, signing in
-/// leads home. Until the session has been read from the Keychain, the app
+/// Signed out, every address leads to signing in; signed in, the welcome
+/// comes first until it has been gone through once on this device, then
+/// signing in leads home. Until the session has been read from the Keychain, the app
 /// waits on a blank page the colour of the launch screen.
 ///
 /// The session pages and the account are siblings of the tabs rather than
@@ -44,15 +48,36 @@ final routerProvider = Provider<GoRouter>((ref) {
     }
   }, fireImmediately: true);
 
+  // Null until known whether the welcome was gone through on this device.
+  final welcomed = ValueNotifier<bool?>(null);
+  ref.listen<AsyncValue<bool>>(welcomeDoneProvider, (previous, next) {
+    if (next.hasValue) {
+      welcomed.value = next.value;
+    } else if (next.hasError) {
+      // Settings that cannot be read must not lock the app on the welcome.
+      welcomed.value = true;
+    }
+  }, fireImmediately: true);
+
   final router = GoRouter(
     initialLocation: _startingPath,
-    refreshListenable: signedIn,
+    refreshListenable: Listenable.merge([signedIn, welcomed]),
     redirect: (context, state) {
       final known = signedIn.value;
       if (known == null) return null;
       final location = state.matchedLocation;
       if (!known) return location == _signInPath ? null : _signInPath;
-      if (location == _signInPath || location == _startingPath) return '/';
+      // Signed in: the welcome comes first, once.
+      final welcome = welcomed.value;
+      if (welcome == null) {
+        return location == _signInPath ? _startingPath : null;
+      }
+      if (!welcome) return location == _welcomePath ? null : _welcomePath;
+      if (location == _signInPath ||
+          location == _startingPath ||
+          location == _welcomePath) {
+        return '/';
+      }
       return null;
     },
     routes: [
@@ -64,6 +89,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: _signInPath,
         name: signInRouteName,
         builder: (context, state) => const SignInPage(),
+      ),
+      GoRoute(
+        path: _welcomePath,
+        builder: (context, state) => const WelcomePage(),
       ),
       // The tabs: Today, Explore, Journal and Progress.
       StatefulShellRoute.indexedStack(
@@ -157,6 +186,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(() {
     router.dispose();
     signedIn.dispose();
+    welcomed.dispose();
   });
   return router;
 });

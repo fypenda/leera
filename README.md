@@ -59,9 +59,6 @@ The backend: see [`backend/README.md`](backend/README.md).
 
 - Reserve the name Leera in App Store Connect, then set the final bundle
   id (provisionally `dev.penda.leera`).
-- Every screen of the Leera design is done, with the Journal, Explore,
-  the vocabulary review and the themes of the daily topic (both Leera
-  Plus).
 - Selling Leera Plus: the paywall (`lib/app/plus/`) runs on `StoreNotReady`,
   which shows the plans without prices and sells nothing. Implement
   `Purchases` (`lib/core/purchases/purchases.dart`) with RevenueCat once the
@@ -71,4 +68,3 @@ The backend: see [`backend/README.md`](backend/README.md).
   subscription. Publish both pages, then link them there.
 - Revoke the Sign in with Apple tokens when an account is deleted (see
   `backend/README.md`).
-- Onboarding (level, interests).

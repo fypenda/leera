@@ -5,6 +5,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/common/widgets/load_failure.dart';
+import '../../../core/settings/settings.dart';
 import '../../../core/time/date_formatting.dart';
 import '../../../core/time/today.dart';
 import '../application/english_feedback.dart';
@@ -40,7 +41,10 @@ class ProgressPage extends ConsumerWidget {
           children: [
             _Title(streak: stats.streak),
             const SizedBox(height: AppSpacing.lg + 2),
-            _LevelCard(history: history),
+            _LevelCard(
+              history: history,
+              selfAssessed: ref.watch(selfAssessedLevelProvider).value,
+            ),
             const SizedBox(height: AppSpacing.lg + 2),
             _ScoreChart(weeks: weeklyScores(history.all, today)),
             const SizedBox(height: AppSpacing.lg + 2),
@@ -153,32 +157,37 @@ class _Title extends StatelessWidget {
 
 /// The latest estimated level, as a ring on the way to C1.
 class _LevelCard extends StatelessWidget {
-  const _LevelCard({required this.history});
+  const _LevelCard({required this.history, required this.selfAssessed});
 
   final FeedbackHistory history;
 
+  /// The level given in the welcome, shown until a correction estimates
+  /// one.
+  final String? selfAssessed;
+
   @override
   Widget build(BuildContext context) {
-    final level = history.level;
+    final estimated = history.level;
+    final level = estimated ?? selfAssessed;
     final progress = level == null ? 0.0 : progressTowardsC1(level);
     final percent = (progress * 100).round();
 
     final String headline;
-    final String detail;
     if (level == null) {
       headline = 'No level yet';
-      detail = 'Your first correction will estimate it.';
     } else if (progress >= 1) {
       headline = 'C1 reached';
-      detail = 'Estimated from your latest correction.';
     } else if (percent == 0) {
       // "0% of the way" says nothing: name the next level instead.
       headline = 'Next step: ${cefrLevels[cefrLevels.indexOf(level) + 1]}';
-      detail = 'Estimated from your latest correction.';
     } else {
       headline = '$percent% of the way to C1';
-      detail = 'Estimated from your latest correction.';
     }
+    final detail = estimated != null
+        ? 'Estimated from your latest correction.'
+        : level != null
+        ? 'Your own estimate, until your first correction.'
+        : 'Your first correction will estimate it.';
 
     return Container(
       key: const ValueKey('progress-level'),
