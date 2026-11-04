@@ -31,7 +31,11 @@ class AuthActions {
   /// Signs in without Apple, as a development account. Debug builds only,
   /// against a backend started with `LEERA_DEV_SIGN_IN=true`.
   Future<void> devSignIn({String name = 'dev'}) async {
-    await _keep(await _ref.read(backendClientProvider).devSignIn(name));
+    await _keep(
+      await _ref
+          .read(backendClientProvider)
+          .devSignIn(name, token: devSignInToken),
+    );
   }
 
   Future<void> _keep(SignedIn signedIn) async {

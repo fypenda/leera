@@ -1,0 +1,40 @@
+# Render Blueprint: the Leera backend as a Docker web service.
+# Render > New > Blueprint > this repo. Secrets marked sync: false are asked
+# for once, in the dashboard; they never live in this file.
+services:
+  - type: web
+    name: leera-backend
+    runtime: docker
+    # Relative to the repo root.
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    # Only changes to the backend redeploy it, not changes to the app.
+    buildFilter:
+      paths:
+        - backend/**
+    region: frankfurt
+    plan: free
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Neon, as JDBC: jdbc:postgresql://<host>/<database>?sslmode=require
+      - key: LEERA_DATABASE_URL
+        sync: false
+      - key: LEERA_DATABASE_USER
+        sync: false
+      - key: LEERA_DATABASE_PASSWORD
+        sync: false
+      # 256 random bits, made by Render once.
+      - key: LEERA_SESSION_SECRET
+        generateValue: true
+      # Until Sign in with Apple works: signing in without Apple, behind a
+      # token. Set LEERA_DEV_SIGN_IN to false once real users arrive.
+      - key: LEERA_DEV_SIGN_IN
+        value: "true"
+      - key: LEERA_DEV_SIGN_IN_TOKEN
+        generateValue: true
+      # A lower ceiling than the default while only you use it.
+      - key: LEERA_REQUESTS_PER_HOUR
+        value: "200"

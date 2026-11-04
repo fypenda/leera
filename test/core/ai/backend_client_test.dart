@@ -14,6 +14,7 @@ class _Backend {
   int status = 200;
   String body = '{}';
   String? authorization;
+  String? devToken;
   String? method;
   String? path;
   Object? received;
@@ -22,6 +23,7 @@ class _Backend {
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
       authorization = request.headers.value(HttpHeaders.authorizationHeader);
+      devToken = request.headers.value('X-Leera-Dev-Token');
       method = request.method;
       path = request.uri.path;
       final text = await utf8.decodeStream(request);
@@ -102,7 +104,21 @@ void main() {
 
     expect(backend.path, '/api/v1/auth/dev');
     expect(backend.received, {'name': 'penda'});
+    expect(backend.devToken, isNull);
     expect(signedIn.session.accessToken, 'dev-token');
+  });
+
+  test('signing in without Apple sends the token when there is one', () async {
+    backend.body =
+        '{"accessToken":"dev-token","expiresAt":"2026-11-18T10:00:00Z",'
+        '"quota":$_quotaJson}';
+
+    await BackendClient(
+      backend.url,
+      () async => null,
+    ).devSignIn('penda', token: 'the-secret');
+
+    expect(backend.devToken, 'the-secret');
   });
 
   test('a refused identity says so', () async {

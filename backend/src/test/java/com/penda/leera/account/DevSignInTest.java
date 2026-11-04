@@ -101,4 +101,27 @@ class DevSignInTest {
                         .content("{\"name\": \"Not Allowed!\"}"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void withoutATokenOnlyThisMachineMaySignIn() throws Exception {
+        mvc.perform(post("/api/v1/auth/dev")
+                        .with(request -> {
+                            request.setRemoteAddr("203.0.113.5");
+                            return request;
+                        })
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"someone\"}"))
+                .andExpect(status().isUnauthorized());
+
+        assertThat(accounts.findByAppleSubject("dev:someone")).isEmpty();
+    }
+
+    @Test
+    void loopbackAddressesAreRecognised() {
+        assertThat(DevSignInController.isLoopback("127.0.0.1")).isTrue();
+        assertThat(DevSignInController.isLoopback("::1")).isTrue();
+        assertThat(DevSignInController.isLoopback("0:0:0:0:0:0:0:1")).isTrue();
+        assertThat(DevSignInController.isLoopback("10.0.0.2")).isFalse();
+        assertThat(DevSignInController.isLoopback(null)).isFalse();
+    }
 }

@@ -44,7 +44,9 @@ simulator signed in to an Apple ID.
 
 Before the paid Apple Developer account exists, Sign in with Apple cannot
 work. Start the backend with `LEERA_DEV_SIGN_IN=true` and use the "Developer
-sign-in" button, shown in debug builds only. To install on an iPhone with a
+sign-in" button, shown in debug builds only. Against the backend on Render,
+also pass its token: `--dart-define=LEERA_DEV_TOKEN=...` (see
+[`backend/README.md`](backend/README.md#deploy)). To install on an iPhone with a
 free account, also remove `CODE_SIGN_ENTITLEMENTS` from the Runner target in
 Xcode (Signing & Capabilities: remove "Sign in with Apple"), and put it back
 once the account is paid.

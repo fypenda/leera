@@ -75,7 +75,7 @@ class FakeBackendClient extends BackendClient {
   }
 
   @override
-  Future<SignedIn> devSignIn(String name) async {
+  Future<SignedIn> devSignIn(String name, {String? token}) async {
     devSignIns.add(name);
     return (session: testSession(), quota: currentQuota);
   }

@@ -8,6 +8,9 @@ spring:
     url: ${LEERA_DATABASE_URL:jdbc:postgresql://localhost:5432/leera}
     username: ${LEERA_DATABASE_USER:leera}
     password: ${LEERA_DATABASE_PASSWORD:leera}
+    hikari:
+      # Small: a free Neon database allows few connections.
+      maximum-pool-size: ${LEERA_DATABASE_POOL:5}
 
 server:
   port: ${PORT:8080}
@@ -32,6 +35,8 @@ leera:
     apple-keys-url: https://appleid.apple.com/auth/keys
     # Signing in without Apple, for development. Never true in production.
     dev-sign-in: ${LEERA_DEV_SIGN_IN:false}
+    # Secret: what signing in without Apple asks for, off this machine.
+    dev-sign-in-token: ${LEERA_DEV_SIGN_IN_TOKEN:}
   quota:
     free-per-week: ${LEERA_FREE_PER_WEEK:1}
     plus-per-day: ${LEERA_PLUS_PER_DAY:3}

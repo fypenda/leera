@@ -56,7 +56,9 @@ keys by a key the tests generate, and PostgreSQL by H2.
 | `LEERA_DATABASE_URL` | `jdbc:postgresql://localhost:5432/leera` | PostgreSQL |
 | `LEERA_DATABASE_USER` / `LEERA_DATABASE_PASSWORD` | `leera` / `leera` | Its credentials |
 | `LEERA_APPLE_AUDIENCES` | `dev.penda.leera` | The app's bundle id(s), comma-separated |
-| `LEERA_DEV_SIGN_IN` | `false` | `true` opens signing in without Apple (below). Never in production |
+| `LEERA_DEV_SIGN_IN` | `false` | `true` opens signing in without Apple (below). Never for real users |
+| `LEERA_DEV_SIGN_IN_TOKEN` | none | The secret signing in without Apple then asks for (header `X-Leera-Dev-Token`), 32 characters at least. Without it, only requests from this machine |
+| `LEERA_DATABASE_POOL` | `5` | Database connections kept open |
 | `LEERA_FREE_PER_WEEK` | `1` | Corrections per week on the free plan |
 | `LEERA_PLUS_PER_DAY` | `3` | Corrections per day on Leera Plus |
 | `LEERA_MODEL` | `claude-sonnet-5-5` | Model used for corrections |
@@ -93,9 +95,13 @@ With `LEERA_DEV_SIGN_IN=true`, `POST /api/v1/auth/dev` with
 `{"name": "penda"}` (lower case, digits, `-`) opens the development account
 `dev:penda` and answers like `/auth/apple`. Development accounts have no
 quota (plan `dev`): their corrections are counted, never refused. Debug builds of the app show a
-"Developer sign-in" button that uses it. Anyone who can reach the backend
-could open such an account, so this stays off in production; the backend
-logs a warning at start-up when it is on.
+"Developer sign-in" button that uses it. Such accounts cost corrections
+with no limit, so the endpoint is guarded: with `LEERA_DEV_SIGN_IN_TOKEN`
+set, a request must carry it in `X-Leera-Dev-Token` (the app sends
+`--dart-define=LEERA_DEV_TOKEN`); without it, only a request from the
+backend's own machine gets in (a `cloudflared` tunnel counts as one, a phone
+on the Wi-Fi does not). It is turned off for real users; the backend logs a
+warning at start-up when it is on.
 
 ```sh
 LEERA_DEV_SIGN_IN=true mvn spring-boot:run
@@ -179,8 +185,44 @@ EnglishController → FeedbackService → AiClient (interface) → AnthropicAiCl
 
 ## Deploy
 
-Any host that runs a container works (Render, Railway, Fly.io, Cloud Run),
-with a managed PostgreSQL (Neon and Supabase have free tiers).
+On [Render](https://render.com), with the database on
+[Neon](https://neon.tech). `render.yaml`, at the root of the repo, describes
+the service.
+
+1. **Neon.** Create a project in the Frankfurt region (AWS
+   `eu-central-1`), next to Render's. From *Connect*, take the **direct**
+   connection (not the pooled one: Flyway needs a plain connection), for
+   example `postgresql://leera_owner:secret@ep-xyz.eu-central-1.aws.neon.tech/neondb?sslmode=require`,
+   and split it into:
+   - `LEERA_DATABASE_URL`: `jdbc:postgresql://ep-xyz.eu-central-1.aws.neon.tech/neondb?sslmode=require`
+   - `LEERA_DATABASE_USER`: `leera_owner`
+   - `LEERA_DATABASE_PASSWORD`: `secret`
+2. **Render.** *New > Blueprint*, choose the `fypenda/leera` repo. Render
+   reads `render.yaml` and asks for `ANTHROPIC_API_KEY` and the three
+   database variables. It makes `LEERA_SESSION_SECRET` and
+   `LEERA_DEV_SIGN_IN_TOKEN` itself.
+3. **Check.** Once deployed,
+   `curl https://<service>.onrender.com/api/v1/health` answers `{"status":"ok"}`.
+   Flyway creates the tables on the first start.
+4. **The app.** Copy `LEERA_DEV_SIGN_IN_TOKEN` from the service's
+   *Environment* page, then:
+   ```sh
+   flutter run --release \
+     --dart-define=LEERA_API_URL=https://<service>.onrender.com \
+     --dart-define=LEERA_DEV_TOKEN=<the token>
+   ```
+   The developer sign-in button only shows in debug builds: use
+   `flutter run` (debug) to sign in that way until Sign in with Apple works.
+
+Every push that touches `backend/` redeploys. On the free plan, the service
+sleeps after a while without requests: the first one after that takes up to
+a minute (the app waits two).
+
+Signing in without Apple stays open on this backend, behind its token, until
+Sign in with Apple works: then set `LEERA_DEV_SIGN_IN` to `false`. Without a
+token, it only lets in requests from the backend's own machine.
+
+To run the image elsewhere:
 
 ```sh
 docker build -t leera-backend .
@@ -189,8 +231,6 @@ docker run -p 8080:8080 \
   -e LEERA_DATABASE_URL -e LEERA_DATABASE_USER -e LEERA_DATABASE_PASSWORD \
   leera-backend
 ```
-
-Serve it over HTTPS: the app sends its session with every request.
 
 ## Not done yet
 

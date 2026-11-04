@@ -44,14 +44,19 @@ public record LeeraProperties(
      * @param appleAudiences the bundle ids Apple's identity tokens may be issued for
      * @param appleKeysUrl where Apple publishes the keys that sign its identity tokens
      * @param devSignIn opens {@code POST /api/v1/auth/dev}, which signs in without Apple. For a
-     *     backend on the developer's own machine only, never in production.
+     *     backend on the developer's own machine, or a test backend behind {@code
+     *     devSignInToken}; never for real users.
+     * @param devSignInToken the secret that signing in without Apple asks for, in the {@code
+     *     X-Leera-Dev-Token} header, 32 characters at least. Without one, only requests from
+     *     this machine may sign in that way.
      */
     public record Auth(
             @NotBlank @Size(min = 32) String sessionSecret,
             @NotNull Duration sessionLifetime,
             @NotEmpty List<@NotBlank String> appleAudiences,
             @NotBlank String appleKeysUrl,
-            boolean devSignIn) {}
+            boolean devSignIn,
+            String devSignInToken) {}
 
     /**
      * How many corrections an account may ask for: per week (Monday to Sunday, UTC) on the free

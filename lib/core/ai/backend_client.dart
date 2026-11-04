@@ -96,13 +96,17 @@ class BackendClient {
   /// Opens a session without Apple, as the development account [name].
   ///
   /// Only a backend started with `LEERA_DEV_SIGN_IN=true` accepts it; the
-  /// app offers it in debug builds only.
-  Future<SignedIn> devSignIn(String name) async {
+  /// app offers it in debug builds only. A backend that is not on this
+  /// computer also asks for its [token] (`LEERA_DEV_SIGN_IN_TOKEN`).
+  Future<SignedIn> devSignIn(String name, {String? token}) async {
     final answer = await _object(
       'POST',
       '/api/v1/auth/dev',
       body: {'name': name},
       signedIn: false,
+      headers: {
+        if (token != null && token.isNotEmpty) 'X-Leera-Dev-Token': token,
+      },
     );
     return _signedIn(answer);
   }
@@ -154,8 +158,15 @@ class BackendClient {
     String path, {
     Map<String, Object?>? body,
     bool signedIn = true,
+    Map<String, String> headers = const {},
   }) async {
-    final answer = await _send(method, path, body: body, signedIn: signedIn);
+    final answer = await _send(
+      method,
+      path,
+      body: body,
+      signedIn: signedIn,
+      headers: headers,
+    );
     if (answer is! Map<String, Object?>) {
       throw const BackendException(
         BackendFailure.unexpected,
@@ -170,6 +181,7 @@ class BackendClient {
     String path, {
     Map<String, Object?>? body,
     bool signedIn = true,
+    Map<String, String> headers = const {},
   }) async {
     Session? session;
     if (signedIn) {
@@ -184,6 +196,7 @@ class BackendClient {
     try {
       final request = await client.openUrl(method, _baseUrl.resolve(path));
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      headers.forEach(request.headers.set);
       if (session != null) {
         request.headers.set(
           HttpHeaders.authorizationHeader,
@@ -252,6 +265,10 @@ class BackendClient {
     };
   }
 }
+
+/// The secret a backend away from this computer asks for when signing in
+/// without Apple: `--dart-define=LEERA_DEV_TOKEN=...`, debug builds only.
+const devSignInToken = String.fromEnvironment('LEERA_DEV_TOKEN');
 
 /// The backend's address. Tests may replace it.
 final backendUrlProvider = Provider<Uri>((ref) => Uri.parse(backendUrl));
