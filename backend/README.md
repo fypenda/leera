@@ -124,17 +124,29 @@ no session, or an expired or forged one, or a deleted account),
   "formatConstraint": "250 to 350 words",
   "presentation": "The Suez Canal opened in 1869...",
   "recurringMistakes": ["prepositions", "articles"],
-  "spoken": false
+  "spoken": false,
+  "learner": {
+    "level": "B2",
+    "levelSelfAssessed": true,
+    "goal": "work",
+    "firstLanguage": "French"
+  }
 }
 ```
+
+`learner` (optional, each field too) tunes the correction: `level` (A2 to
+C2), `levelSelfAssessed` (true while it is the person's own estimate),
+`goal` (`work`, `studies`, `exam`, `travel` or `everyday`) and
+`firstLanguage` (in English, letters only).
 
 `spoken` (optional, false by default) says the presentation is the
 transcript of a recording: the model is then told to judge it as speech and
 to leave alone punctuation, spelling and words that sound alike, which come
 from the transcription. Audio never reaches the backend.
 
-Only what the correction needs is sent: no notes, no identifier, nothing
-about the person.
+Only what the correction needs is sent: no notes, no identifier. About the
+person, only the level, the goal and the first language, if they gave them,
+and never stored by the backend.
 
 ### Feedback response
 
@@ -153,8 +165,8 @@ EnglishController → FeedbackService → AiClient (interface) → AnthropicAiCl
 ```
 
 - **Prompt and schema are versioned files**:
-  `src/main/resources/prompts/english/feedback-v1.md` and
-  `feedback-v1.schema.json`. The version goes back with every answer, so
+  `src/main/resources/prompts/english/feedback-v2.md` and
+  `feedback-v2.schema.json`. The version goes back with every answer, so
   corrections made with different prompts can be told apart. To change the
   prompt, add `feedback-v2.*` and switch `FeedbackService.PROMPT_VERSION`.
 - **Structured outputs**: the schema is sent as `output_config.format`, so the

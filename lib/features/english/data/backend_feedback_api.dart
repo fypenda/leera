@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/ai/backend_client.dart';
 import '../domain/feedback_api.dart';
 import '../domain/feedback_codec.dart';
+import '../domain/learner_profile.dart';
 import '../domain/practice_topic.dart';
 import '../domain/restitution_format.dart';
 import '../domain/session_feedback.dart';
@@ -20,6 +21,7 @@ class BackendFeedbackApi implements FeedbackApi {
     required String presentation,
     required bool spoken,
     required List<String> recurringMistakes,
+    required LearnerProfile learner,
   }) async {
     final answer = await _client.postJson('/api/v1/english/feedback', {
       'topicTitle': topic.title,
@@ -29,6 +31,7 @@ class BackendFeedbackApi implements FeedbackApi {
       'presentation': presentation,
       'recurringMistakes': recurringMistakes,
       'spoken': spoken,
+      'learner': learner.toJson(),
     });
     try {
       return decodeFeedback(answer);

@@ -7,12 +7,16 @@ import '../../core/auth/auth_actions.dart';
 import '../../core/auth/quota.dart';
 import '../../core/auth/session.dart';
 import '../../core/common/widgets/load_failure.dart';
+import '../../core/settings/settings.dart';
 import '../../core/time/date_formatting.dart';
+import '../../features/english/application/english_feedback.dart';
+import '../../features/english/domain/learner_profile.dart';
 import '../../features/english/english_routes.dart';
 import '../../features/english/presentation/session_chrome.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
+import '../welcome/learner_choices.dart';
 
 /// The account: the plan and what is left of the quota, signing out, and
 /// deleting the account.
@@ -143,6 +147,8 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                   ),
                   const SizedBox(height: AppSpacing.lg + 2),
                   plan,
+                  const SizedBox(height: AppSpacing.lg + 2),
+                  const _LearningCard(),
                   const SizedBox(height: AppSpacing.lg + 2),
                   const _Card(
                     child: Row(
@@ -421,12 +427,213 @@ class _ActionRow extends StatelessWidget {
               ),
             ),
           ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            size: 20,
-            color: AppColors.textMuted,
+          if (onTap != null)
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: AppColors.textMuted,
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// What corrections are tuned to: the level given in the welcome (until a
+/// correction estimates one), the goal and the first language. Each can be
+/// changed here.
+class _LearningCard extends ConsumerWidget {
+  const _LearningCard();
+
+  Future<void> _edit(
+    BuildContext context,
+    WidgetRef ref, {
+    required String title,
+    required String key,
+    required String? current,
+    required Widget Function(String? value, ValueChanged<String?> onChanged)
+    choices,
+  }) => showModalBottomSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    backgroundColor: AppColors.background,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (sheet) => _EditSheet(
+      title: title,
+      initial: current,
+      choices: choices,
+      onSave: (value) async {
+        final settings = ref.read(settingsRepositoryProvider);
+        await settings.write(key, value ?? '');
+      },
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final estimated = ref.watch(feedbackHistoryProvider).value?.level;
+    final given = _orNull(ref.watch(selfAssessedLevelProvider).value);
+    final goal = LearnerGoal.fromName(ref.watch(goalSettingProvider).value);
+    final language = _orNull(ref.watch(firstLanguageProvider).value);
+
+    return _Card(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        children: [
+          _ActionRow(
+            key: const ValueKey('edit-level'),
+            icon: Icons.trending_up_rounded,
+            label: estimated != null
+                ? 'Level $estimated, estimated by Claude'
+                : given != null
+                ? 'Level $given, your estimate'
+                : 'Your level',
+            color: AppColors.ink,
+            // Once Claude has estimated it, there is nothing to set.
+            onTap: estimated != null
+                ? null
+                : () => _edit(
+                    context,
+                    ref,
+                    title: 'Where is your English today?',
+                    key: SettingKeys.selfAssessedLevel,
+                    current: given,
+                    choices: (value, onChanged) =>
+                        LevelChoices(level: value, onChanged: onChanged),
+                  ),
+          ),
+          const _RowDivider(),
+          _ActionRow(
+            key: const ValueKey('edit-goal'),
+            icon: Icons.flag_outlined,
+            label: goal?.label ?? 'Why you learn English',
+            color: AppColors.ink,
+            onTap: () => _edit(
+              context,
+              ref,
+              title: 'Why are you learning English?',
+              key: SettingKeys.goal,
+              current: goal?.name,
+              choices: (value, onChanged) => GoalChoices(
+                goal: LearnerGoal.fromName(value),
+                onChanged: (goal) => onChanged(goal.name),
+              ),
+            ),
+          ),
+          const _RowDivider(),
+          _ActionRow(
+            key: const ValueKey('edit-language'),
+            icon: Icons.translate_rounded,
+            label: language == null
+                ? 'Your first language'
+                : 'First language: $language',
+            color: AppColors.ink,
+            onTap: () => _edit(
+              context,
+              ref,
+              title: 'What is your first language?',
+              key: SettingKeys.firstLanguage,
+              current: language,
+              choices: (value, onChanged) => FirstLanguageChoices(
+                language: value,
+                onChanged: onChanged,
+              ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// A setting cleared is stored empty.
+  static String? _orNull(String? value) =>
+      value == null || value.trim().isEmpty ? null : value;
+}
+
+class _RowDivider extends StatelessWidget {
+  const _RowDivider();
+
+  @override
+  Widget build(BuildContext context) => const Divider(
+    height: 1,
+    indent: 16,
+    endIndent: 16,
+    color: AppColors.surfaceMuted,
+  );
+}
+
+/// A sheet with one choice to change, and Save.
+class _EditSheet extends StatefulWidget {
+  const _EditSheet({
+    required this.title,
+    required this.initial,
+    required this.choices,
+    required this.onSave,
+  });
+
+  final String title;
+  final String? initial;
+  final Widget Function(String? value, ValueChanged<String?> onChanged)
+  choices;
+  final Future<void> Function(String? value) onSave;
+
+  @override
+  State<_EditSheet> createState() => _EditSheetState();
+}
+
+class _EditSheetState extends State<_EditSheet> {
+  late String? _value = widget.initial;
+  var _saving = false;
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    final navigator = Navigator.of(context);
+    try {
+      await widget.onSave(_value);
+      navigator.pop();
+    } on Object catch (e) {
+      debugPrint('Saving the learner profile failed: $e');
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.title,
+              style: const TextStyle(
+                fontFamily: displayFontFamily,
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            widget.choices(_value, (value) => setState(() => _value = value)),
+            const SizedBox(height: AppSpacing.lg),
+            BottomActionButton(
+              buttonKey: const ValueKey('save-learning'),
+              label: 'Save',
+              icon: Icons.check_rounded,
+              onTap: _saving ? null : _save,
+            ),
+          ],
+        ),
       ),
     ),
   );

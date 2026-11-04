@@ -5,6 +5,7 @@ import 'package:leera/app/account/sign_in_page.dart';
 import 'package:leera/core/ai/backend_client.dart';
 import 'package:leera/core/auth/apple_sign_in.dart';
 import 'package:leera/core/auth/quota.dart';
+import 'package:leera/core/settings/settings.dart';
 import 'package:leera/features/english/presentation/english_page.dart';
 
 import '../support/fake_ai.dart';
@@ -163,5 +164,34 @@ void main() {
     expect(backend.deletions, 1);
     expect(sessions.session, isNull);
     expect(find.byType(SignInPage), findsOneWidget);
+  });
+
+  appTest('the learning profile can be changed from the account', (
+    tester,
+  ) async {
+    final container = await pumpEnglishApp(tester, iPhonePortrait);
+    await _tap(tester, find.byKey(const ValueKey('open-account')));
+
+    expect(find.text('Why you learn English'), findsOneWidget);
+    await _tap(tester, find.byKey(const ValueKey('edit-goal')));
+    await _tap(tester, find.byKey(const ValueKey('welcome-goal-exam')));
+    await _tap(tester, find.byKey(const ValueKey('save-learning')));
+
+    expect(find.text('For an exam'), findsOneWidget);
+    expect(
+      await runInApp(
+        tester,
+        () => container
+            .read(settingsRepositoryProvider)
+            .watch(SettingKeys.goal)
+            .first,
+      ),
+      'exam',
+    );
+
+    await _tap(tester, find.byKey(const ValueKey('edit-language')));
+    await _tap(tester, find.byKey(const ValueKey('welcome-language-Arabic')));
+    await _tap(tester, find.byKey(const ValueKey('save-learning')));
+    expect(find.text('First language: Arabic'), findsOneWidget);
   });
 }

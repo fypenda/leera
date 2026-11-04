@@ -39,6 +39,12 @@ abstract final class SettingKeys {
 
   /// The level the person gave in the welcome, one of the CEFR levels.
   static const selfAssessedLevel = 'self_assessed_level';
+
+  /// Why they learn: the name of a `LearnerGoal`.
+  static const goal = 'goal';
+
+  /// Their first language, in English ("French").
+  static const firstLanguage = 'first_language';
 }
 
 /// Whether the welcome has been gone through on this device.
@@ -54,4 +60,15 @@ final selfAssessedLevelProvider = StreamProvider<String?>(
   (ref) => ref
       .watch(settingsRepositoryProvider)
       .watch(SettingKeys.selfAssessedLevel),
+);
+
+/// Why the person learns, as stored (the name of a `LearnerGoal`), or null.
+final goalSettingProvider = StreamProvider<String?>(
+  (ref) => ref.watch(settingsRepositoryProvider).watch(SettingKeys.goal),
+);
+
+/// The person's first language, or null.
+final firstLanguageProvider = StreamProvider<String?>(
+  (ref) =>
+      ref.watch(settingsRepositoryProvider).watch(SettingKeys.firstLanguage),
 );

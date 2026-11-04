@@ -39,7 +39,7 @@ class SessionFeedback {
     }
   }
 
-  /// The prompt that produced it, such as "feedback-v1".
+  /// The prompt that produced it, such as "feedback-v2".
   final String promptVersion;
   final String model;
   final DateTime createdAt;

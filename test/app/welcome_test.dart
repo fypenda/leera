@@ -40,6 +40,21 @@ void main() {
     await _tap(tester, _key('welcome-level-B2'));
     await _tap(tester, _key('welcome-next'));
 
+    // A goal must be chosen too.
+    expect(
+      tester.widget<FilledButton>(_key('welcome-next')).onPressed,
+      isNull,
+    );
+    await _tap(tester, _key('welcome-goal-work'));
+    await _tap(tester, _key('welcome-next'));
+
+    // The first language is optional; another one can be typed.
+    expect(find.text('Skip'), findsOneWidget);
+    await _tap(tester, _key('welcome-language-other'));
+    await tester.enterText(_key('welcome-language-typed'), '  Pulaar ');
+    await settle(tester);
+    await _tap(tester, _key('welcome-next'));
+
     // Themes are optional.
     expect(find.text('Skip for now'), findsOneWidget);
     await _tap(tester, _key('welcome-theme-Science'));
@@ -47,6 +62,8 @@ void main() {
     await _tap(tester, _key('welcome-next'));
 
     expect(find.text('Starting at B2, aiming for C1'), findsOneWidget);
+    expect(find.text('For work'), findsOneWidget);
+    expect(find.text('Corrections that know Pulaar'), findsOneWidget);
     expect(find.text('Your themes: Africa, Science'), findsOneWidget);
     await _tap(tester, _key('welcome-next'));
 
@@ -57,6 +74,11 @@ void main() {
     expect(
       await _read(tester, settings.watch(SettingKeys.selfAssessedLevel)),
       'B2',
+    );
+    expect(await _read(tester, settings.watch(SettingKeys.goal)), 'work');
+    expect(
+      await _read(tester, settings.watch(SettingKeys.firstLanguage)),
+      'Pulaar',
     );
     expect(
       await _read(

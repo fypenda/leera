@@ -4,8 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:leera/app/router.dart';
 import 'package:leera/app/account/account_page.dart';
 import 'package:leera/core/ai/backend_client.dart';
+import 'package:leera/core/settings/settings.dart';
 import 'package:leera/features/english/data/backend_feedback_api.dart';
 import 'package:leera/features/english/data/practice_session_repository_provider.dart';
+import 'package:leera/features/english/domain/learner_profile.dart';
 import 'package:leera/features/english/domain/practice_session.dart';
 import 'package:leera/features/english/domain/restitution_format.dart';
 import 'package:leera/features/english/domain/session_feedback.dart';
@@ -251,5 +253,42 @@ void main() {
       find.text('Estimated after your first correction'),
       findsOneWidget,
     );
+  });
+
+  appTest('the correction knows the learner: level, goal, first language', (
+    tester,
+  ) async {
+    final api = FakeFeedbackApi();
+    final container = await _pumpApp(tester, api: api);
+    final settings = container.read(settingsRepositoryProvider);
+    await runInApp(tester, () async {
+      await settings.write(SettingKeys.selfAssessedLevel, 'B1');
+      await settings.write(SettingKeys.goal, 'studies');
+      await settings.write(SettingKeys.firstLanguage, 'Wolof');
+    });
+    final session = await _finished(tester, container);
+
+    _openFeedback(container, session);
+    await _pumpUntil(tester, _headline);
+
+    final learner = api.calls.single.learner;
+    // No correction yet: the level is the one given in the welcome.
+    expect(learner.level, 'B1');
+    expect(learner.levelSelfAssessed, isTrue);
+    expect(learner.goal, LearnerGoal.studies);
+    expect(learner.firstLanguage, 'Wolof');
+  });
+
+  appTest('without a profile, the correction is asked for all the same', (
+    tester,
+  ) async {
+    final api = FakeFeedbackApi();
+    final container = await _pumpApp(tester, api: api);
+    final session = await _finished(tester, container);
+
+    _openFeedback(container, session);
+    await _pumpUntil(tester, _headline);
+
+    expect(api.calls.single.learner.toJson(), isEmpty);
   });
 }

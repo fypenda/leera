@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class FeedbackService {
 
-    public static final String PROMPT_VERSION = "feedback-v1";
+    public static final String PROMPT_VERSION = "feedback-v2";
 
     static final int MAX_CORRECTIONS = 12;
     static final int MAX_VOCABULARY = 5;
@@ -58,6 +58,7 @@ public class FeedbackService {
                 What to find out: %s
                 Format: %s (%s)
                 Delivery: %s
+                Learner: %s
                 Recurring mistakes from past sessions: %s
 
                 <presentation>
@@ -70,9 +71,37 @@ public class FeedbackService {
                         request.formatLabel().strip(),
                         request.formatConstraint().strip(),
                         request.isSpoken() ? SPOKEN : "written",
+                        learner(request.learnerOrNone()),
                         recurring.isEmpty() ? "none yet" : String.join(", ", recurring),
                         // The closing tag cannot be faked from inside the text.
                         request.presentation().strip().replace("</presentation>", "</ presentation>"));
+    }
+
+    /** Why each goal learns English, as the model reads it. */
+    private static final java.util.Map<String, String> GOALS =
+            java.util.Map.of(
+                    "work", "for work: meetings, emails, presentations",
+                    "studies", "for studies: lectures, essays, academic English",
+                    "exam", "for an exam such as IELTS, TOEFL or Cambridge",
+                    "travel", "to travel: everyday situations and conversations",
+                    "everyday", "for everyday life and for the pleasure of it");
+
+    /** One line on the learner, with only what is known. */
+    static String learner(FeedbackRequest.Learner learner) {
+        var parts = new ArrayList<String>();
+        if (learner.level() != null) {
+            parts.add(
+                    "level "
+                            + learner.level()
+                            + (Boolean.TRUE.equals(learner.levelSelfAssessed())
+                                    ? " (their own estimate, not yet checked)"
+                                    : " (estimated from earlier corrections)"));
+        }
+        if (learner.goal() != null) parts.add("learning " + GOALS.get(learner.goal()));
+        if (learner.firstLanguage() != null && !learner.firstLanguage().isBlank()) {
+            parts.add("first language " + learner.firstLanguage().strip());
+        }
+        return parts.isEmpty() ? "nothing known" : String.join("; ", parts);
     }
 
     FeedbackResponse normalized(JsonNode answer) {

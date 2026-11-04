@@ -63,7 +63,8 @@ class FeedbackServiceTest {
                 "250 to 350 words",
                 presentation,
                 recurring,
-                spoken);
+                spoken,
+                null);
     }
 
     private JsonNode json(String text) throws Exception {
@@ -123,6 +124,20 @@ class FeedbackServiceTest {
         assertThat(user).contains("Format: Short essay (250 to 350 words)");
         assertThat(user).contains("Recurring mistakes from past sessions: articles, prepositions");
         assertThat(user).contains("<presentation>\nMy text.\n</presentation>");
+    }
+
+    @Test
+    void theLearnerIsDescribedWithWhatIsKnown() {
+        assertThat(FeedbackService.learner(new FeedbackRequest.Learner(null, null, null, null)))
+                .isEqualTo("nothing known");
+        assertThat(FeedbackService.learner(
+                        new FeedbackRequest.Learner("B2", true, "work", "French")))
+                .isEqualTo(
+                        "level B2 (their own estimate, not yet checked); learning for work: "
+                                + "meetings, emails, presentations; first language French");
+        assertThat(FeedbackService.learner(new FeedbackRequest.Learner("C1", false, null, null)))
+                .isEqualTo("level C1 (estimated from earlier corrections)");
+        assertThat(service.userMessage(request("My text.", null))).contains("Learner: nothing known");
     }
 
     @Test

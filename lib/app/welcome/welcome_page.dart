@@ -4,18 +4,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/settings/settings.dart';
 import '../../features/english/application/english_themes.dart';
 import '../../features/english/data/preference_repository_providers.dart';
+import '../../features/english/domain/learner_profile.dart';
 import '../../features/english/presentation/session_chrome.dart';
 import '../../features/english/presentation/theme_style.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
+import 'learner_choices.dart';
 
 /// The welcome, once, before the first topic: how Leera works, the level
-/// the person thinks they have, and the themes they like.
+/// the person thinks they have, why they learn, their first language and
+/// the themes they like.
 ///
-/// The level is shown until a correction estimates it. The themes come
-/// first in Explore, and with Leera Plus the daily topic is drawn from them.
-/// Nothing is stored before the last step: leaving halfway starts over.
+/// The level is shown until a correction estimates it. The level, the goal
+/// and the first language go with each correction, so it fits the person.
+/// The themes come first in Explore, and with Leera Plus the daily topic is
+/// drawn from them. Nothing is stored before the last step: leaving halfway
+/// starts over.
 class WelcomePage extends ConsumerStatefulWidget {
   const WelcomePage({super.key});
 
@@ -23,20 +28,14 @@ class WelcomePage extends ConsumerStatefulWidget {
   ConsumerState<WelcomePage> createState() => _WelcomePageState();
 }
 
-/// The levels offered, with how each feels from the inside.
-const _levels = [
-  ('A2', 'I get by in simple conversations'),
-  ('B1', 'I handle everyday situations'),
-  ('B2', 'I can discuss most topics'),
-  ('C1', 'I am fluent, and polishing'),
-];
-
 class _WelcomePageState extends ConsumerState<WelcomePage> {
-  static const _steps = 4;
+  static const _steps = 6;
   static const double _maxWidth = 560;
 
   var _step = 0;
   String? _level;
+  LearnerGoal? _goal;
+  String? _language;
   final _themes = <String>{};
   var _saving = false;
 
@@ -46,6 +45,12 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
       final settings = ref.read(settingsRepositoryProvider);
       if (_level case final level?) {
         await settings.write(SettingKeys.selfAssessedLevel, level);
+      }
+      if (_goal case final goal?) {
+        await settings.write(SettingKeys.goal, goal.name);
+      }
+      if (cleanFirstLanguage(_language) case final language?) {
+        await settings.write(SettingKeys.firstLanguage, language);
       }
       if (_themes.isNotEmpty) {
         await ref.read(themePreferenceRepositoryProvider).setThemes(_themes);
@@ -75,6 +80,22 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
         _level == null ? null : () => setState(() => _step++),
       ),
       2 => (
+        _GoalStep(
+          goal: _goal,
+          onChanged: (goal) => setState(() => _goal = goal),
+        ),
+        'Continue',
+        _goal == null ? null : () => setState(() => _step++),
+      ),
+      3 => (
+        _LanguageStep(
+          language: _language,
+          onChanged: (language) => setState(() => _language = language),
+        ),
+        _language == null ? 'Skip' : 'Continue',
+        () => setState(() => _step++),
+      ),
+      4 => (
         _ThemesStep(
           chosen: _themes,
           onToggle: (theme) => setState(
@@ -87,7 +108,12 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
         () => setState(() => _step++),
       ),
       _ => (
-        _Ready(level: _level, themes: _themes),
+        _Ready(
+          level: _level,
+          goal: _goal,
+          language: cleanFirstLanguage(_language),
+          themes: _themes,
+        ),
         "Let's go",
         _saving ? null : _finish,
       ),
@@ -334,70 +360,49 @@ class _LevelStep extends StatelessWidget {
             "Claude's.",
       ),
       const SizedBox(height: AppSpacing.xl),
-      for (final (value, description) in _levels) ...[
-        Semantics(
-          inMutuallyExclusiveGroup: true,
-          checked: value == level,
-          button: true,
-          child: Material(
-            color: AppColors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: BorderSide(
-                color: value == level ? AppColors.ink : AppColors.surfaceMuted,
-                width: value == level ? 2.5 : 2,
-              ),
-            ),
-            child: InkWell(
-              key: ValueKey('welcome-level-$value'),
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => onChanged(value),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: value == level
-                            ? AppColors.highlight
-                            : AppColors.primarySoft,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        value,
-                        style: const TextStyle(
-                          fontFamily: displayFontFamily,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Text(
-                        description,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm + 2),
-      ],
+      LevelChoices(level: level, onChanged: onChanged),
+    ],
+  );
+}
+
+class _GoalStep extends StatelessWidget {
+  const _GoalStep({required this.goal, required this.onChanged});
+
+  final LearnerGoal? goal;
+  final ValueChanged<LearnerGoal> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const _Title(
+        'Why are you learning English?',
+        detail: 'Claude fits its corrections to it: the words, the tone.',
+      ),
+      const SizedBox(height: AppSpacing.xl),
+      GoalChoices(goal: goal, onChanged: onChanged),
+    ],
+  );
+}
+
+class _LanguageStep extends StatelessWidget {
+  const _LanguageStep({required this.language, required this.onChanged});
+
+  final String? language;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const _Title(
+        'What is your first language?',
+        detail:
+            'So Claude can spot the traps it sets in English, such as false '
+            'friends. Optional.',
+      ),
+      const SizedBox(height: AppSpacing.xl),
+      FirstLanguageChoices(language: language, onChanged: onChanged),
     ],
   );
 }
@@ -451,9 +456,16 @@ class _ThemesStep extends ConsumerWidget {
 }
 
 class _Ready extends StatelessWidget {
-  const _Ready({required this.level, required this.themes});
+  const _Ready({
+    required this.level,
+    required this.goal,
+    required this.language,
+    required this.themes,
+  });
 
   final String? level;
+  final LearnerGoal? goal;
+  final String? language;
   final Set<String> themes;
 
   @override
@@ -480,6 +492,17 @@ class _Ready extends StatelessWidget {
               icon: Icons.trending_up_rounded,
               text: 'Starting at $level, aiming for C1',
             ),
+            if (goal case final goal?) ...[
+              const SizedBox(height: AppSpacing.md),
+              _Line(icon: Icons.flag_outlined, text: goal.label),
+            ],
+            if (language case final language?) ...[
+              const SizedBox(height: AppSpacing.md),
+              _Line(
+                icon: Icons.translate_rounded,
+                text: 'Corrections that know $language',
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             _Line(
               icon: Icons.explore_outlined,

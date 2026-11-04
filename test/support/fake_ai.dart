@@ -3,6 +3,7 @@ import 'package:leera/core/auth/apple_sign_in.dart';
 import 'package:leera/core/auth/quota.dart';
 import 'package:leera/core/auth/session.dart';
 import 'package:leera/features/english/domain/feedback_api.dart';
+import 'package:leera/features/english/domain/learner_profile.dart';
 import 'package:leera/features/english/domain/practice_topic.dart';
 import 'package:leera/features/english/domain/restitution_format.dart';
 import 'package:leera/features/english/domain/session_feedback.dart';
@@ -100,6 +101,7 @@ typedef FeedbackCall = ({
   String presentation,
   bool spoken,
   List<String> recurringMistakes,
+  LearnerProfile learner,
 });
 
 /// Answers with [answer], or fails with [failure], and remembers each call.
@@ -118,6 +120,7 @@ class FakeFeedbackApi implements FeedbackApi {
     required String presentation,
     required bool spoken,
     required List<String> recurringMistakes,
+    required LearnerProfile learner,
   }) async {
     calls.add((
       topic: topic,
@@ -125,6 +128,7 @@ class FakeFeedbackApi implements FeedbackApi {
       presentation: presentation,
       spoken: spoken,
       recurringMistakes: recurringMistakes,
+      learner: learner,
     ));
     if (failure case final failure?) throw BackendException(failure);
     return answer;
