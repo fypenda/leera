@@ -149,6 +149,27 @@ class EnglishApiTest {
     }
 
     @Test
+    void aLearnerProfileIsCheckedThenUsed() throws Exception {
+        when(ai.completeJson(anyString(), anyString(), any())).thenReturn(mapper.readTree(ANSWER));
+        String withLearner = REQUEST.replace(
+                "\"recurringMistakes\": [\"prepositions\"]}",
+                "\"recurringMistakes\": [\"prepositions\"], "
+                        + "\"learner\": {\"level\": \"B2\", \"levelSelfAssessed\": true, "
+                        + "\"goal\": \"work\", \"firstLanguage\": \"French\"}}");
+        askFeedback(bearer, withLearner).andExpect(status().isOk());
+
+        for (String bad : new String[] {
+            "{\"level\": \"Z9\"}", "{\"goal\": \"fun\"}", "{\"firstLanguage\": \"<b>\"}"
+        }) {
+            askFeedback(bearer, REQUEST.replace(
+                            "\"recurringMistakes\": [\"prepositions\"]}",
+                            "\"recurringMistakes\": [\"prepositions\"], \"learner\": " + bad + "}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("invalid_request"));
+        }
+    }
+
+    @Test
     void anInvalidRequestIsNotCounted() throws Exception {
         askFeedback(bearer, "{\"topicTitle\": \"\", \"formatLabel\": \"Essay\"}")
                 .andExpect(status().isBadRequest())
