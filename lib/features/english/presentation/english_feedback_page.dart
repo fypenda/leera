@@ -14,12 +14,14 @@ import '../../../core/common/widgets/load_failure.dart';
 import '../application/english_feedback.dart';
 import '../application/english_recordings.dart';
 import '../application/english_transcriptions.dart';
+import '../domain/kept_words.dart';
 import '../domain/practice_session.dart';
 import '../domain/session_feedback.dart';
 import '../english_routes.dart';
 import 'session_chrome.dart';
 import 'session_navigation.dart';
 import 'voice_recorder_panel.dart';
+import 'word_sort.dart';
 
 /// Step 3 of a session: the correction of what was written.
 ///
@@ -637,6 +639,17 @@ class _Correction extends StatelessWidget {
               style: textTheme.bodyMedium?.copyWith(color: AppColors.text),
             ),
           ],
+        ],
+        // Last: what to review, from this correction.
+        if (wordsOf(session.id, feedback) case final words
+            when words.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xl - 4),
+          const _SectionTitle(
+            icon: Icons.style_outlined,
+            title: 'Your review cards',
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ReviewCardsToSort(words: words),
         ],
       ],
     );

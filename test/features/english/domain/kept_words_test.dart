@@ -41,4 +41,49 @@ void main() {
     expect(searchWords(words, 'slow').single.item.expression, 'to bottleneck');
     expect(searchWords(words, 'canal'), isEmpty);
   });
+
+  test('natural phrasings are kept too, short ones only', () {
+    Correction correction(CorrectionKind kind, String fix) => Correction(
+      kind: kind,
+      original: 'I am agree with that',
+      corrected: 'I agree with that',
+      mistake: 'am agree',
+      fix: fix,
+      explanation: 'Agree is a verb.',
+      tag: 'verbs',
+    );
+    final feedback = SessionFeedback(
+      promptVersion: 'feedback-v3',
+      model: 'claude-test',
+      createdAt: DateTime.utc(2026, 11, 4),
+      estimatedLevel: 'B2',
+      headline: 'Good',
+      summary: 'Clear.',
+      scores: FeedbackScores(
+        grammar: 7,
+        vocabulary: 7,
+        naturalness: 7,
+        structure: 7,
+        content: 7,
+      ),
+      corrections: [
+        correction(CorrectionKind.naturalness, 'agree'),
+        correction(CorrectionKind.grammar, 'agree with'),
+        correction(CorrectionKind.naturalness, 'x' * (maxPhrasingLength + 1)),
+        correction(CorrectionKind.naturalness, '  '),
+      ],
+      vocabulary: const [VocabularyItem('chokepoint', 'a narrow passage')],
+      followUpQuestions: const [],
+      recurringMistakesSeen: const [],
+    );
+
+    final words = wordsOf('s', feedback);
+
+    expect([for (final w in words) (w.item.expression, w.phrasing)], [
+      ('chokepoint', false),
+      ('agree', true),
+    ]);
+    expect(words.last.item.meaning, 'Rather than “am agree”. Agree is a verb.');
+    expect(words.last.item.example, 'I agree with that');
+  });
 }

@@ -1,14 +1,19 @@
 import 'session_feedback.dart';
 
-/// An expression suggested by a correction, with where it came from.
+/// An expression from a correction, with where it came from: one Claude
+/// suggested, or a more natural phrasing of what the person said.
 class KeptWord {
   const KeptWord({
     required this.item,
     required this.sessionId,
     required this.keptAt,
+    this.phrasing = false,
   });
 
   final VocabularyItem item;
+
+  /// True for a more natural phrasing of the person's own words.
+  final bool phrasing;
 
   /// The session whose correction suggested it.
   final String sessionId;
@@ -21,7 +26,34 @@ class KeptWord {
 String normalizeExpression(String expression) =>
     expression.trim().toLowerCase();
 
-/// Every expression suggested so far, each once (where it was suggested
+/// A phrasing longer than this is a sentence, not something to review.
+const maxPhrasingLength = 60;
+
+/// What one correction gives to keep: the expressions suggested, then the
+/// more natural phrasings of what was said (the words that replace theirs).
+List<KeptWord> wordsOf(String sessionId, SessionFeedback feedback) => [
+  for (final item in feedback.vocabulary)
+    KeptWord(item: item, sessionId: sessionId, keptAt: feedback.createdAt),
+  for (final correction in feedback.corrections)
+    if (correction.kind == CorrectionKind.naturalness &&
+        correction.fix.trim().isNotEmpty &&
+        correction.fix.trim().length <= maxPhrasingLength)
+      KeptWord(
+        item: VocabularyItem(
+          correction.fix.trim(),
+          correction.mistake.trim().isEmpty
+              ? correction.explanation
+              : 'Rather than “${correction.mistake.trim()}”. '
+                    '${correction.explanation}',
+          correction.corrected,
+        ),
+        sessionId: sessionId,
+        keptAt: feedback.createdAt,
+        phrasing: true,
+      ),
+];
+
+/// Every expression and phrasing kept so far, each once (where it came
 /// last), the latest first. [feedbacks] maps session ids to corrections.
 List<KeptWord> keptWords(Map<String, SessionFeedback> feedbacks) {
   final entries = feedbacks.entries.toList()
@@ -29,9 +61,8 @@ List<KeptWord> keptWords(Map<String, SessionFeedback> feedbacks) {
   final seen = <String>{};
   return [
     for (final MapEntry(key: sessionId, value: feedback) in entries)
-      for (final item in feedback.vocabulary)
-        if (seen.add(normalizeExpression(item.expression)))
-          KeptWord(item: item, sessionId: sessionId, keptAt: feedback.createdAt),
+      for (final word in wordsOf(sessionId, feedback))
+        if (seen.add(word.key)) word,
   ];
 }
 

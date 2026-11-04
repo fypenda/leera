@@ -22,6 +22,7 @@ import '../domain/word_review.dart';
 import '../english_routes.dart';
 import 'english_page.dart';
 import 'session_navigation.dart';
+import 'word_sort.dart';
 
 /// The Journal tab: every word kept from the corrections, searchable, and
 /// every finished session, month by month. Each opens its correction.
@@ -165,6 +166,7 @@ class _ReviewEntry extends ConsumerWidget {
       reviews,
       today,
       limit: words.length,
+      known: ref.watch(knownWordsProvider),
     ).length;
 
     return Material(
@@ -443,6 +445,8 @@ class _WordCard extends StatelessWidget {
                   color: AppColors.accentStrong,
                 ),
               ),
+              const SizedBox(height: AppSpacing.sm + 2),
+              WordSortButtons(word: word),
             ],
           ),
         ),

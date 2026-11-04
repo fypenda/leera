@@ -17,3 +17,8 @@ final wordReviewRepositoryProvider = Provider<WordReviewRepository>(
 final themePreferenceRepositoryProvider = Provider<ThemePreferenceRepository>(
   (ref) => DriftThemePreferenceRepository(ref.watch(appDatabaseProvider)),
 );
+
+/// Which kept words the person knows, and which they want to learn.
+final wordTriageRepositoryProvider = Provider<WordTriageRepository>(
+  (ref) => DriftWordTriageRepository(ref.watch(appDatabaseProvider)),
+);

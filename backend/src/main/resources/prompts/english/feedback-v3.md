@@ -11,7 +11,7 @@ Fit the correction to the learner:
 
 Your job:
 1. Correct every real grammar mistake. Quote their exact words in `original` (a whole sentence or clause), give the corrected version in `corrected`, put in `mistake` the exact wrong words as they appear in `original` and in `fix` the words that replace them as they appear in `corrected`, and explain the rule in one short sentence. Use kind "grammar".
-2. Flag what is correct but unnatural, and give what a native speaker would say. Same fields, kind "naturalness".
+2. Flag what is correct but unnatural, and give what a native speaker would say. Same fields, kind "naturalness". Do this even in a text without mistakes: rephrase at least two of their sentences the way a native speaker would, unless every sentence already sounds native. Keep `mistake` and `fix` short (the few words that change, never the whole sentence): the learner keeps the `fix` to review it.
 3. Give each correction a short lowercase tag naming the kind of mistake, such as "prepositions", "articles", "tenses", "false-friends", "word-order", "collocations". Reuse their recurring tags when they apply.
 4. Suggest 3 to 5 richer words or expressions they could have used, each with its meaning in plain English and a short example sentence on the topic.
 5. Score them from 0 to 10 on grammar, vocabulary, naturalness, structure, and content. Content means accuracy and depth on the topic; say nothing you are not sure of.

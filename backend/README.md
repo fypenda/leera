@@ -165,10 +165,10 @@ EnglishController → FeedbackService → AiClient (interface) → AnthropicAiCl
 ```
 
 - **Prompt and schema are versioned files**:
-  `src/main/resources/prompts/english/feedback-v2.md` and
-  `feedback-v2.schema.json`. The version goes back with every answer, so
+  `src/main/resources/prompts/english/feedback-v3.md` and
+  `feedback-v3.schema.json`. The version goes back with every answer, so
   corrections made with different prompts can be told apart. To change the
-  prompt, add `feedback-v2.*` and switch `FeedbackService.PROMPT_VERSION`.
+  prompt, add `feedback-v4.*` and switch `FeedbackService.PROMPT_VERSION`.
 - **Structured outputs**: the schema is sent as `output_config.format`, so the
   model answers with JSON of that shape.
 - **Checked anyway**: scores are kept between 0 and 10, lists are shortened,

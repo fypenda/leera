@@ -94,8 +94,15 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
 
     // Drawn once: answering changes the reviews, not this round.
     if (_queue == null) {
-      if (words case AsyncData(value: final kept) when reviews.hasValue) {
-        _queue = reviewQueue(kept, reviews.requireValue, today);
+      final triage = ref.watch(wordTriageProvider);
+      if (words case AsyncData(value: final kept)
+          when reviews.hasValue && triage.hasValue) {
+        _queue = reviewQueue(
+          kept,
+          reviews.requireValue,
+          today,
+          known: ref.read(knownWordsProvider),
+        );
       }
     }
     final queue = _queue;

@@ -36,3 +36,30 @@ class DriftWordReviewRepository implements WordReviewRepository {
         ),
       );
 }
+
+/// [WordTriageRepository] backed by the local SQLite database.
+class DriftWordTriageRepository implements WordTriageRepository {
+  DriftWordTriageRepository(this._db);
+
+  final AppDatabase _db;
+
+  @override
+  Stream<Map<String, bool>> watchTriage() => _db
+      .select(_db.wordTriage)
+      .watch()
+      .map((rows) => {for (final row in rows) row.expressionKey: row.known});
+
+  @override
+  Future<void> sort(String key, {required bool known, required DateTime at}) {
+    if (key.trim().isEmpty) throw ArgumentError.value(key, 'key');
+    return _db
+        .into(_db.wordTriage)
+        .insertOnConflictUpdate(
+          WordTriageCompanion.insert(
+            expressionKey: key,
+            known: known,
+            decidedAt: at.toUtc(),
+          ),
+        );
+  }
+}

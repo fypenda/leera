@@ -55,19 +55,25 @@ class WordReview {
 
 /// The words to review on [today], at most [limit]: those already reviewed
 /// and due, the longest overdue first, then words never reviewed, the
-/// latest kept first.
+/// latest kept first. Words the person said they know ([known]) are left
+/// out.
 List<KeptWord> reviewQueue(
   List<KeptWord> words,
   Map<String, WordReview> reviews,
   CalendarDate today, {
   int limit = 20,
+  Set<String> known = const {},
 }) {
-  final due = [
+  final toLearn = [
     for (final word in words)
+      if (!known.contains(word.key)) word,
+  ];
+  final due = [
+    for (final word in toLearn)
       if (reviews[word.key] case final review? when review.isDueOn(today)) word,
   ]..sort((a, b) => reviews[a.key]!.dueOn.daysUntil(reviews[b.key]!.dueOn));
   final fresh = [
-    for (final word in words)
+    for (final word in toLearn)
       if (!reviews.containsKey(word.key)) word,
   ];
   return [...due, ...fresh].take(limit).toList();

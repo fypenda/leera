@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class FeedbackService {
 
-    public static final String PROMPT_VERSION = "feedback-v2";
+    public static final String PROMPT_VERSION = "feedback-v3";
 
     static final int MAX_CORRECTIONS = 12;
     static final int MAX_VOCABULARY = 5;

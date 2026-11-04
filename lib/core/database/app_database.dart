@@ -7,6 +7,7 @@ import 'tables/preferred_themes.dart';
 import 'tables/session_feedbacks.dart';
 import 'tables/session_recordings.dart';
 import 'tables/word_reviews.dart';
+import 'tables/word_triage.dart';
 
 part 'app_database.g.dart';
 
@@ -23,6 +24,7 @@ part 'app_database.g.dart';
     WordReviews,
     PreferredThemes,
     AppSettings,
+    WordTriage,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -39,13 +41,15 @@ class AppDatabase extends _$AppDatabase {
   /// - 2: word_reviews, for reviewing the words kept.
   /// - 3: preferred_themes, the themes the daily topic is drawn from.
   /// - 4: app_settings, small settings by key (the welcome, the level).
+  /// - 5: word_triage, the words kept that the person knows or wants to
+  ///   learn.
   ///
   /// Any change to a table means adding 1 here, writing the step that takes
   /// existing databases to the new version in [migration], recording the new
   /// schema with `dart run drift_dev make-migrations` and testing the step
   /// with real rows. Do not raise this number for any other reason.
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -54,11 +58,12 @@ class AppDatabase extends _$AppDatabase {
       // A version this build cannot migrate (a file written by a newer
       // build) must fail here, leaving the file untouched. Never drop or
       // recreate tables to get past a migration: that destroys user data.
-      if (from >= 1 && from < to && to == 4) {
+      if (from >= 1 && from < to && to == 5) {
         // Each step in turn, from the file's version up.
         if (from < 2) await m.createTable(wordReviews);
         if (from < 3) await m.createTable(preferredThemes);
         if (from < 4) await m.createTable(appSettings);
+        if (from < 5) await m.createTable(wordTriage);
         return;
       }
       throw StateError(

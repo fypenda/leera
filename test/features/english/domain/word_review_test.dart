@@ -70,4 +70,16 @@ void main() {
     expect(reviewQueue(words, reviews, _today, limit: 1).single.key,
         'long overdue');
   });
+
+  test('words the person knows never come up', () {
+    final words = [_word('known'), _word('to learn')];
+
+    expect(
+      [
+        for (final w in reviewQueue(words, const {}, _today, known: {'known'}))
+          w.key,
+      ],
+      ['to learn'],
+    );
+  });
 }
