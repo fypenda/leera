@@ -6,6 +6,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/common/widgets/load_failure.dart';
+import '../../../core/motion/motion.dart';
 import '../../../core/settings/settings.dart';
 import '../../../core/time/clock.dart';
 import '../../../core/time/date_formatting.dart';
@@ -55,6 +56,7 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
     if (_saving) return;
     final queue = _queue!;
     final repeat = _missed.contains(word.key);
+    Haptics.selection();
     setState(() => _saving = true);
     try {
       // A word missed earlier in the round keeps its first answer: back
@@ -86,7 +88,10 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
       _index++;
       _revealed = false;
     });
-    if (_index >= queue.length) await _recordRound();
+    if (_index >= queue.length) {
+      Haptics.success();
+      await _recordRound();
+    }
   }
 
   /// A round finished: today counts as a review day in the weekly plan.
@@ -204,8 +209,11 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
     final total = queue?.length ?? 0;
     final position = (_index + 1).clamp(0, total);
 
+    final finished = queue != null && queue.isNotEmpty && _index >= queue.length;
     return Scaffold(
-      body: SafeArea(
+      body: Stack(
+        children: [
+          Positioned.fill(child: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
@@ -280,7 +288,13 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
               ),
             ),
           ),
-        ),
+        )),
+          // A round finished.
+          if (finished)
+            const Positioned.fill(
+              child: ConfettiBurst(key: ValueKey('review-confetti')),
+            ),
+        ],
       ),
     );
   }

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -91,6 +94,9 @@ class _FeedbackForSession extends ConsumerStatefulWidget {
 
 class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
   var _requesting = false;
+
+  /// The correction just arrived on this page: it is revealed, not shown.
+  var _justReceived = false;
   BackendFailure? _failure;
 
   /// Asked for once by itself; after that, only when the person retries.
@@ -139,6 +145,10 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
     });
     try {
       await ref.read(feedbackActionsProvider).requestFor(widget.session);
+      if (mounted) {
+        Haptics.success();
+        setState(() => _justReceived = true);
+      }
     } on BackendException catch (e) {
       debugPrint('Feedback request failed: $e');
       if (mounted) setState(() => _failure = e.failure);
@@ -172,7 +182,11 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
         onRetry: () => ref.invalidate(feedbacksProvider),
       ),
       AsyncData(value: final stored) when stored[session.id] != null =>
-        _Correction(session: session, feedback: stored[session.id]!),
+        _Correction(
+          session: session,
+          feedback: stored[session.id]!,
+          reveal: _justReceived,
+        ),
       // Spoken: the recording must be there, then heard, before anything
       // can be corrected.
       _ when session.presentation == null && !recordings.hasValue =>
@@ -273,10 +287,13 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
 
     void close() => context.goNamed(englishRouteName);
 
+    final celebrate = body is _Correction && body.celebrates;
     return EdgeSwipeBack(
       onBack: close,
       child: Scaffold(
-        body: SafeArea(
+        body: Stack(
+          children: [
+            Positioned.fill(child: SafeArea(
           child: Align(
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
@@ -348,6 +365,13 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
               ),
             ),
           ),
+        )),
+            // Earned: a mean of 7 or more, on a correction just received.
+            if (celebrate)
+              const Positioned.fill(
+                child: ConfettiBurst(key: ValueKey('confetti')),
+              ),
+          ],
         ),
       ),
     );
@@ -526,10 +550,27 @@ class _WhatYouSaid extends StatelessWidget {
 /// A correction received: the headline and level, then the scores, what to
 /// fix, the words to keep and where to go further.
 class _Correction extends StatelessWidget {
-  const _Correction({required this.session, required this.feedback});
+  const _Correction({
+    required this.session,
+    required this.feedback,
+    this.reveal = false,
+  });
 
   final PracticeSession session;
   final SessionFeedback feedback;
+
+  /// Just arrived: the level climbs, the scores fill, the rest rises after,
+  /// with confetti for a mean of 7 or more. Shown as it is otherwise.
+  final bool reveal;
+
+  /// When the sections below the scores rise, once the bars are full.
+  static const _restDelay = Duration(milliseconds: 1300);
+
+  /// Whether this correction earns confetti.
+  bool get celebrates => reveal && feedback.scores.average >= 7;
+
+  Widget _riseIfRevealed(Widget child) =>
+      reveal ? RiseIn(delay: _restDelay, child: child) : child;
 
   /// The step, the headline and the estimated level, at the top of the page.
   Widget header(BuildContext context) => Row(
@@ -561,7 +602,7 @@ class _Correction extends StatelessWidget {
         ),
       ),
       const SizedBox(width: AppSpacing.md),
-      _LevelBox(level: feedback.estimatedLevel),
+      _LevelBox(level: feedback.estimatedLevel, reveal: reveal),
     ],
   );
 
@@ -590,89 +631,105 @@ class _Correction extends StatelessWidget {
                 (Icons.lightbulb_outline_rounded, 'Content', scores.content),
               ].indexed) ...[
                 if (index > 0) const SizedBox(height: AppSpacing.md),
-                _ScoreRow(icon: icon, label: label, score: score),
+                _ScoreRow(
+                  icon: icon,
+                  label: label,
+                  score: score,
+                  // One after the other, once the level has landed.
+                  delay: reveal
+                      ? Duration(milliseconds: 450 + index * 110)
+                      : null,
+                ),
               ],
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.xl - 4),
-        const _SectionTitle(icon: Icons.edit_outlined, title: 'To fix'),
-        if (feedback.corrections.isEmpty) ...[
-          const SizedBox(height: AppSpacing.sm + 2),
-          Text(
-            // A short take with low scores has nothing to fix, but nothing
-            // to praise either.
-            feedback.scores.average >= 5
-                ? 'Nothing to fix this time. Well done!'
-                : 'No mistakes to point out this time.',
-            key: const ValueKey('no-corrections'),
-            style: textTheme.bodyMedium,
-          ),
-        ],
-        for (final correction in feedback.corrections) ...[
-          const SizedBox(height: AppSpacing.sm + 2),
-          _CorrectionCard(correction),
-        ],
-        if (feedback.recurringMistakesSeen.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            key: const ValueKey('recurring-seen'),
-            crossAxisAlignment: CrossAxisAlignment.start,
+        // The rest rises once the scores are in.
+        _riseIfRevealed(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(
-                Icons.replay_rounded,
-                size: 16,
-                color: AppColors.coralStrong,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'Back again: ${feedback.recurringMistakesSeen.join(', ')}',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.coralStrong,
-                  ),
+              const SizedBox(height: AppSpacing.xl - 4),
+              const _SectionTitle(icon: Icons.edit_outlined, title: 'To fix'),
+              if (feedback.corrections.isEmpty) ...[
+                const SizedBox(height: AppSpacing.sm + 2),
+                Text(
+                  // A short take with low scores has nothing to fix, but nothing
+                  // to praise either.
+                  feedback.scores.average >= 5
+                      ? 'Nothing to fix this time. Well done!'
+                      : 'No mistakes to point out this time.',
+                  key: const ValueKey('no-corrections'),
+                  style: textTheme.bodyMedium,
                 ),
-              ),
+              ],
+              for (final correction in feedback.corrections) ...[
+                const SizedBox(height: AppSpacing.sm + 2),
+                _CorrectionCard(correction),
+              ],
+              if (feedback.recurringMistakesSeen.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  key: const ValueKey('recurring-seen'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.replay_rounded,
+                      size: 16,
+                      color: AppColors.coralStrong,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Back again: ${feedback.recurringMistakesSeen.join(', ')}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.coralStrong,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (feedback.vocabulary.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xl - 4),
+                const _SectionTitle(
+                  icon: Icons.bookmark_border_rounded,
+                  title: 'Words to keep',
+                ),
+                const SizedBox(height: AppSpacing.sm + 2),
+                for (final item in feedback.vocabulary) ...[
+                  VocabularyCard(item),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+              ],
+              if (feedback.followUpQuestions.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xl - 4),
+                const _SectionTitle(
+                  icon: Icons.explore_outlined,
+                  title: 'To go further',
+                ),
+                for (final question in feedback.followUpQuestions) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    question,
+                    style: textTheme.bodyMedium?.copyWith(color: AppColors.text),
+                  ),
+                ],
+              ],
+              // Last: what to review, from this correction.
+              if (wordsOf(session.id, feedback) case final words
+                  when words.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xl - 4),
+                const _SectionTitle(
+                  icon: Icons.style_outlined,
+                  title: 'Your review cards',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ReviewCardsToSort(words: words),
+              ],
             ],
           ),
-        ],
-        if (feedback.vocabulary.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xl - 4),
-          const _SectionTitle(
-            icon: Icons.bookmark_border_rounded,
-            title: 'Words to keep',
-          ),
-          const SizedBox(height: AppSpacing.sm + 2),
-          for (final item in feedback.vocabulary) ...[
-            VocabularyCard(item),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-        ],
-        if (feedback.followUpQuestions.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xl - 4),
-          const _SectionTitle(
-            icon: Icons.explore_outlined,
-            title: 'To go further',
-          ),
-          for (final question in feedback.followUpQuestions) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              question,
-              style: textTheme.bodyMedium?.copyWith(color: AppColors.text),
-            ),
-          ],
-        ],
-        // Last: what to review, from this correction.
-        if (wordsOf(session.id, feedback) case final words
-            when words.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xl - 4),
-          const _SectionTitle(
-            icon: Icons.style_outlined,
-            title: 'Your review cards',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ReviewCardsToSort(words: words),
-        ],
+        ),
       ],
     );
   }
@@ -684,11 +741,17 @@ class _ScoreRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.score,
+    this.delay,
   });
 
   final IconData icon;
   final String label;
   final int score;
+
+  /// When revealed: the bar fills and the number counts up after this.
+  final Duration? delay;
+
+  static const _fill = Duration(milliseconds: 900);
 
   @override
   Widget build(BuildContext context) {
@@ -697,7 +760,20 @@ class _ScoreRow extends StatelessWidget {
       fontWeight: FontWeight.w700,
       color: AppColors.text,
     );
+    final color = score >= 7 ? AppColors.highlight : AppColors.coral;
+    final delay = motionOn(context) ? this.delay : null;
 
+    Widget bar(double value) => ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(
+        value: value,
+        minHeight: 8,
+        color: color,
+        backgroundColor: AppColors.surfaceMuted,
+      ),
+    );
+
+    final scoreStyle = text.copyWith(fontWeight: FontWeight.w800);
     return Semantics(
       label: '$label: $score out of 10',
       excludeSemantics: true,
@@ -707,22 +783,31 @@ class _ScoreRow extends StatelessWidget {
           const SizedBox(width: 10),
           SizedBox(width: 100, child: Text(label, style: text)),
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: score / 10,
-                minHeight: 8,
-                color: score >= 7 ? AppColors.highlight : AppColors.coral,
-                backgroundColor: AppColors.surfaceMuted,
-              ),
-            ),
+            child: delay == null
+                ? bar(score / 10)
+                : TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: score / 10),
+                    duration: delay + _fill,
+                    curve: Interval(
+                      delay.inMilliseconds / (delay + _fill).inMilliseconds,
+                      1,
+                      curve: Curves.easeOutCubic,
+                    ),
+                    builder: (context, value, _) => bar(value),
+                  ),
           ),
           SizedBox(
             width: 28,
-            child: Text(
-              '$score',
-              textAlign: TextAlign.end,
-              style: text.copyWith(fontWeight: FontWeight.w800),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: delay == null
+                  ? Text('$score', style: scoreStyle)
+                  : CountUp(
+                      value: score,
+                      delay: delay,
+                      duration: _fill,
+                      style: scoreStyle,
+                    ),
             ),
           ),
         ],
@@ -731,43 +816,90 @@ class _ScoreRow extends StatelessWidget {
   }
 }
 
-class _LevelBox extends StatelessWidget {
-  const _LevelBox({required this.level});
+class _LevelBox extends StatefulWidget {
+  const _LevelBox({required this.level, this.reveal = false});
 
   final String level;
 
+  /// Climbs the levels below it before landing on it, with a pop.
+  final bool reveal;
+
+  @override
+  State<_LevelBox> createState() => _LevelBoxState();
+}
+
+class _LevelBoxState extends State<_LevelBox> {
+  /// The level shown while climbing; null once landed.
+  String? _climbing;
+  Timer? _timer;
+  var _landed = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final target = cefrLevels.indexOf(widget.level);
+    if (_timer != null || _landed || !widget.reveal || target <= 0) return;
+    if (!motionOn(context)) return;
+    // From the first level, at most four steps, up to the one estimated.
+    final from = math.max(0, target - 4);
+    var step = from;
+    _climbing = cefrLevels[step];
+    _timer = Timer.periodic(const Duration(milliseconds: 160), (timer) {
+      step++;
+      if (!mounted) return timer.cancel();
+      setState(() {
+        if (step >= target) {
+          timer.cancel();
+          _climbing = null;
+          _landed = true;
+        } else {
+          _climbing = cefrLevels[step];
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('estimated-level'),
-      width: 76,
-      height: 76,
-      decoration: BoxDecoration(
-        color: AppColors.highlight,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            level,
-            style: const TextStyle(
-              fontFamily: displayFontFamily,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              height: 1,
-              color: AppColors.ink,
+    return SelectPop(
+      selected: _landed,
+      child: Container(
+        key: const ValueKey('estimated-level'),
+        width: 76,
+        height: 76,
+        decoration: BoxDecoration(
+          color: AppColors.highlight,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _climbing ?? widget.level,
+              style: const TextStyle(
+                fontFamily: displayFontFamily,
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                height: 1,
+                color: AppColors.ink,
+              ),
             ),
-          ),
-          const Text(
-            'estimated',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink,
+            const Text(
+              'estimated',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
