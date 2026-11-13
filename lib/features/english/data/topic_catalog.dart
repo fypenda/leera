@@ -1,4 +1,5 @@
 import '../domain/practice_topic.dart';
+import 'video_lessons.dart';
 import 'topic_bank.dart';
 
 /// The topics a session can draw, bundled with the app.
@@ -292,6 +293,8 @@ PracticeTopic topicById(String id) {
   for (final topic in topicCatalog) {
     if (topic.id == id) return topic;
   }
+  // A talk retold: not in the catalog, never drawn.
+  if (videoLessonOfTopic(id) case final lesson?) return lesson.topic;
   return PracticeTopic(
     id: id,
     title: 'A topic no longer in the list',

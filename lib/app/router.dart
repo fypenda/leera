@@ -11,6 +11,7 @@ import '../features/english/presentation/english_restitution_page.dart';
 import '../features/english/presentation/english_topic_page.dart';
 import '../features/english/presentation/explore_page.dart';
 import '../features/english/presentation/explore_theme_page.dart';
+import '../features/english/presentation/video_page.dart';
 import '../features/english/presentation/journal_page.dart';
 import '../features/english/presentation/progress_page.dart';
 import '../features/english/presentation/review_page.dart';
@@ -120,6 +121,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: exploreRouteName,
                 builder: (context, state) => const ExplorePage(),
                 routes: [
+                  // Before the themes: "video" is not a theme.
+                  GoRoute(
+                    path: 'video/:$exploreVideoParameter',
+                    name: exploreVideoRouteName,
+                    builder: (context, state) => VideoPage(
+                      videoId: state.pathParameters[exploreVideoParameter]!,
+                    ),
+                  ),
                   GoRoute(
                     path: ':$exploreThemeParameter',
                     name: exploreThemeRouteName,

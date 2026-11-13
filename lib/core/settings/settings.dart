@@ -60,6 +60,10 @@ abstract final class SettingKeys {
   /// The expressions of the day opened, as `encodeGifts` writes them.
   static const idiomGifts = 'idiom_gifts';
 
+  /// The talks whose expressions were kept: `id@YYYY-MM-DD`, comma
+  /// separated.
+  static const videoWords = 'video_words';
+
   /// The days a review round was finished, `YYYY-MM-DD`, comma separated.
   static const reviewDays = 'review_days';
 }
@@ -116,4 +120,9 @@ final rollOnArrivalProvider = StreamProvider<bool>(
 /// The expressions of the day opened, as stored.
 final idiomGiftsSettingProvider = StreamProvider<String?>(
   (ref) => ref.watch(settingsRepositoryProvider).watch(SettingKeys.idiomGifts),
+);
+
+/// The talks whose expressions were kept, as stored.
+final videoWordsSettingProvider = StreamProvider<String?>(
+  (ref) => ref.watch(settingsRepositoryProvider).watch(SettingKeys.videoWords),
 );

@@ -27,3 +27,9 @@ const exploreThemeRouteName = 'explore-theme';
 
 /// The path parameter of the theme route: the theme's name.
 const exploreThemeParameter = 'theme';
+
+/// A talk to watch and retell, in Explore.
+const exploreVideoRouteName = 'explore-video';
+
+/// The path parameter of the talk route: the talk's id.
+const exploreVideoParameter = 'videoId';

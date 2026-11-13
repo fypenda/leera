@@ -15,6 +15,7 @@ import 'package:leera/core/auth/session.dart';
 import 'package:leera/core/database/database_provider.dart';
 import 'package:leera/core/settings/settings.dart';
 import 'package:leera/core/time/clock.dart';
+import 'package:leera/features/english/application/english_videos.dart';
 
 import 'fake_ai.dart';
 import 'fake_audio.dart';
@@ -42,6 +43,7 @@ Future<ProviderContainer> pumpEnglishApp(
   RecordingFiles? recordingFiles,
   Transcriber? transcriber,
   bool welcomed = true,
+  void Function(Uri)? onOpenUrl,
   List<Override> overrides = const [],
 }) async {
   tester.view.devicePixelRatio = 1;
@@ -80,6 +82,12 @@ Future<ProviderContainer> pumpEnglishApp(
         transcriberProvider.overrideWithValue(
           transcriber ?? FakeTranscriber(),
         ),
+        // No network, and no leaving the app.
+        showVideoThumbnailsProvider.overrideWithValue(false),
+        openExternalUrlProvider.overrideWithValue((uri) async {
+          onOpenUrl?.call(uri);
+          return true;
+        }),
         // Past the welcome, unless the test is about it.
         if (welcomed)
           welcomeDoneProvider.overrideWith((ref) => Stream.value(true)),

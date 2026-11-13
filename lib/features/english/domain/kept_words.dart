@@ -9,6 +9,7 @@ class KeptWord {
     required this.keptAt,
     this.phrasing = false,
     this.ofTheDay = false,
+    this.origin,
   });
 
   final VocabularyItem item;
@@ -18,6 +19,10 @@ class KeptWord {
 
   /// True for an expression of the day, kept from its gift.
   final bool ofTheDay;
+
+  /// Where it came from, when not from a correction: "Expression of the
+  /// day", "From Simon Sinek's talk".
+  final String? origin;
 
   /// The session whose correction suggested it; for an expression of the
   /// day, no session's.

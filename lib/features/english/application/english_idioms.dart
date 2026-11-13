@@ -49,6 +49,7 @@ final keptIdiomsProvider = Provider<List<KeptWord>>((ref) {
             // corrections.
             keptAt: DateTime(gift.day.year, gift.day.month, gift.day.day, 12),
             ofTheDay: true,
+            origin: 'Expression of the day',
           ),
   ];
 });

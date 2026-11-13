@@ -10,9 +10,11 @@ import '../application/english_sessions.dart';
 import '../application/english_themes.dart';
 import '../data/preference_repository_providers.dart';
 import '../data/topic_catalog.dart';
+import '../data/video_lessons.dart';
 import '../english_routes.dart';
 import 'session_chrome.dart';
 import 'theme_style.dart';
+import 'video_page.dart';
 
 /// The Explore tab: the themes of the topics, each opening its topics to
 /// choose one, and the themes the daily topic is drawn from.
@@ -85,6 +87,8 @@ class ExplorePage extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.lg + 2),
                   const _DailyThemesCard(),
+                  const SizedBox(height: AppSpacing.xl - 4),
+                  const _Videos(),
                   const SizedBox(height: AppSpacing.xl - 4),
                   const Text(
                     'Themes',
@@ -393,4 +397,93 @@ class _ThemePickerState extends ConsumerState<_ThemePicker> {
       ),
     );
   }
+}
+
+/// Talks to watch, then retell: a row to scroll sideways.
+class _Videos extends StatelessWidget {
+  const _Videos();
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const Text(
+        'Watch, then retell',
+        style: TextStyle(
+          fontFamily: displayFontFamily,
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          color: AppColors.ink,
+        ),
+      ),
+      const SizedBox(height: 2),
+      const Text(
+        'Talks chosen for learners, with notes to check after.',
+        style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+      ),
+      const SizedBox(height: AppSpacing.md),
+      SizedBox(
+        height: 214,
+        child: ListView.separated(
+          key: const ValueKey('explore-videos'),
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          itemCount: videoLessons.length,
+          separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+          itemBuilder: (context, index) {
+            final lesson = videoLessons[index];
+            return SizedBox(
+              width: 220,
+              child: Material(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  key: ValueKey('video-${lesson.id}'),
+                  onTap: () => context.goNamed(
+                    exploreVideoRouteName,
+                    pathParameters: {exploreVideoParameter: lesson.id},
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      VideoThumbnail(lesson: lesson, radius: 0),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                        child: Text(
+                          lesson.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            height: 1.25,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                        child: Text(
+                          '${lesson.speaker} · ${lesson.minutes} min · '
+                          '${lesson.level}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ],
+  );
 }

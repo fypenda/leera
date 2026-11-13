@@ -5,6 +5,7 @@ import '../domain/kept_words.dart';
 import '../domain/word_review.dart';
 import 'english_feedback.dart';
 import 'english_idioms.dart';
+import 'english_videos.dart';
 
 final wordReviewsProvider = StreamProvider<Map<String, WordReview>>(
   (ref) => ref.watch(wordReviewRepositoryProvider).watchReviews(),
@@ -13,7 +14,10 @@ final wordReviewsProvider = StreamProvider<Map<String, WordReview>>(
 /// Every word kept from the corrections and the expressions of the day,
 /// the latest first.
 final keptWordsProvider = Provider<AsyncValue<List<KeptWord>>>((ref) {
-  final ofTheDay = ref.watch(keptIdiomsProvider);
+  final ofTheDay = [
+    ...ref.watch(keptIdiomsProvider),
+    ...ref.watch(keptVideoWordsProvider),
+  ];
   return ref
       .watch(feedbacksProvider)
       .whenData((feedbacks) => keptWords(feedbacks, ofTheDay: ofTheDay));
