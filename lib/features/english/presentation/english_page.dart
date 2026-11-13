@@ -71,8 +71,9 @@ class EnglishPage extends ConsumerWidget {
                   switch (stats) {
                     AsyncData(value: final week) => _WeekCard(
                       stats: week,
-                      pace: StudyPace.fromName(
-                        ref.watch(studyPaceSettingProvider).value,
+                      plan: WeeklyPlan.stored(
+                        plan: ref.watch(weeklyPlanSettingProvider).value,
+                        pace: ref.watch(studyPaceSettingProvider).value,
                       ),
                       reviewDays: reviewDaysThisWeek(
                         parseReviewDays(
@@ -90,6 +91,11 @@ class EnglishPage extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.xl - 4),
                   DailyChallengeCard(
                     continuing: inProgress != null,
+                    // Straight after the welcome, the first topic rolls.
+                    autoStart: ref.watch(rollOnArrivalProvider).value ?? false,
+                    onAutoStarted: () => ref
+                        .read(settingsRepositoryProvider)
+                        .write(SettingKeys.rollOnArrival, ''),
                     onStart: () => startOrContinueSession(context, ref),
                   ),
                   if (quota != null) ...[
@@ -222,14 +228,14 @@ class _Header extends StatelessWidget {
 class _WeekCard extends StatelessWidget {
   const _WeekCard({
     required this.stats,
-    required this.pace,
+    required this.plan,
     required this.reviewDays,
   });
 
   final PracticeStats stats;
 
-  /// The weekly plan, if the person chose a pace.
-  final StudyPace? pace;
+  /// The week the person set, if they did.
+  final WeeklyPlan? plan;
 
   /// Days this week with a review round finished.
   final int reviewDays;
@@ -282,7 +288,7 @@ class _WeekCard extends StatelessWidget {
                 ),
             ],
           ),
-          if (pace case final pace?) ...[
+          if (plan case final plan?) ...[
             const SizedBox(height: AppSpacing.md + 2),
             const Divider(height: 1, color: AppColors.surfaceMuted),
             const SizedBox(height: AppSpacing.md),
@@ -290,14 +296,14 @@ class _WeekCard extends StatelessWidget {
               key: const ValueKey('plan-sessions'),
               label: 'Sessions',
               done: stats.completedThisWeek,
-              target: pace.sessions,
+              target: plan.sessions,
             ),
             const SizedBox(height: AppSpacing.sm),
             _PlanLine(
               key: const ValueKey('plan-reviews'),
               label: 'Review days',
               done: reviewDays,
-              target: pace.reviews,
+              target: plan.reviews,
             ),
           ],
         ],

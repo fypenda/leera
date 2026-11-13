@@ -193,5 +193,22 @@ void main() {
     await _tap(tester, find.byKey(const ValueKey('welcome-language-Arabic')));
     await _tap(tester, find.byKey(const ValueKey('save-learning')));
     expect(find.text('First language: Arabic'), findsOneWidget);
+
+    // The week: a day off, then saved.
+    await _tap(tester, find.byKey(const ValueKey('edit-week')));
+    await _tap(tester, find.byKey(const ValueKey('rhythm-day-5')));
+    expect(find.text('4 topics a week'), findsOneWidget);
+    await _tap(tester, find.byKey(const ValueKey('save-learning')));
+    expect(find.text('4 days, 20 min a day'), findsOneWidget);
+    expect(
+      await runInApp(
+        tester,
+        () => container
+            .read(settingsRepositoryProvider)
+            .watch(SettingKeys.weeklyPlan)
+            .first,
+      ),
+      '20|1,2,3,4',
+    );
   });
 }

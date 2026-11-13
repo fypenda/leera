@@ -6,6 +6,50 @@ void main() {
   // Friday 13 November 2026: its week starts on Monday the 9th.
   final today = CalendarDate(2026, 11, 13);
 
+  test('a week makes a session a day chosen, and a review on most', () {
+    const plan = WeeklyPlan(minutes: 20, days: {1, 2, 3, 4, 5});
+    expect(plan.sessions, 5);
+    expect(plan.reviews, 3);
+    expect(const WeeklyPlan(minutes: 10, days: {6}).reviews, 1);
+    expect(const WeeklyPlan(minutes: 10, days: {}).reviews, 0);
+    expect(WeeklyPlan.standard.practisesOn(today), isTrue);
+    expect(
+      WeeklyPlan.standard.practisesOn(CalendarDate(2026, 11, 14)),
+      isFalse,
+    );
+  });
+
+  test('a week is named by its days', () {
+    expect(WeeklyPlan.standard.daysLabel, 'Mon–Fri');
+    expect(
+      const WeeklyPlan(minutes: 30, days: {1, 2, 3, 4, 5, 6, 7}).daysLabel,
+      'Every day',
+    );
+    expect(const WeeklyPlan(minutes: 30, days: {7, 6}).daysLabel, 'Weekends');
+    expect(const WeeklyPlan(minutes: 30, days: {1, 4, 6}).daysLabel, '3 days');
+  });
+
+  test('a week is stored, and read back', () {
+    const plan = WeeklyPlan(minutes: 30, days: {6, 1, 3});
+    expect(plan.encode(), '30|1,3,6');
+    expect(WeeklyPlan.decode(plan.encode()), plan);
+    expect(WeeklyPlan.decode(null), isNull);
+    expect(WeeklyPlan.decode(''), isNull);
+    expect(WeeklyPlan.decode('25|1,2'), isNull);
+    expect(WeeklyPlan.decode('20|'), isNull);
+    expect(WeeklyPlan.decode('20|0,3,9'), const WeeklyPlan(minutes: 20, days: {3}));
+  });
+
+  test('an old pace still gives a week', () {
+    expect(
+      WeeklyPlan.stored(pace: 'light'),
+      const WeeklyPlan(minutes: 10, days: {1, 3, 5}),
+    );
+    expect(WeeklyPlan.stored(pace: 'regular'), WeeklyPlan.standard);
+    expect(WeeklyPlan.stored(plan: '30|6,7', pace: 'regular')?.daysLabel, 'Weekends');
+    expect(WeeklyPlan.stored(), isNull);
+  });
+
   test('a pace is read back from its name', () {
     expect(StudyPace.fromName('regular'), StudyPace.regular);
     expect(StudyPace.fromName('lazy'), isNull);

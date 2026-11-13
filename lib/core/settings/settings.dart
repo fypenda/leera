@@ -46,8 +46,16 @@ abstract final class SettingKeys {
   /// Their first language, in English ("French").
   static const firstLanguage = 'first_language';
 
-  /// How much time they give: the name of a `StudyPace`.
+  /// How much time they gave, before practice days: the name of a
+  /// `StudyPace`. Read, never written any more.
   static const studyPace = 'study_pace';
+
+  /// Their week: minutes a day and practice days, as `WeeklyPlan.encode`.
+  static const weeklyPlan = 'weekly_plan';
+
+  /// "yes" when Today should roll the first topic as it opens: the welcome
+  /// ended on "Roll my first topic".
+  static const rollOnArrival = 'roll_on_arrival';
 
   /// The days a review round was finished, `YYYY-MM-DD`, comma separated.
   static const reviewDays = 'review_days';
@@ -87,4 +95,17 @@ final studyPaceSettingProvider = StreamProvider<String?>(
 /// The days a review round was finished, as stored.
 final reviewDaysSettingProvider = StreamProvider<String?>(
   (ref) => ref.watch(settingsRepositoryProvider).watch(SettingKeys.reviewDays),
+);
+
+/// The week the person set, as stored.
+final weeklyPlanSettingProvider = StreamProvider<String?>(
+  (ref) => ref.watch(settingsRepositoryProvider).watch(SettingKeys.weeklyPlan),
+);
+
+/// Whether Today should roll the first topic as it opens.
+final rollOnArrivalProvider = StreamProvider<bool>(
+  (ref) => ref
+      .watch(settingsRepositoryProvider)
+      .watch(SettingKeys.rollOnArrival)
+      .map((value) => value == 'yes'),
 );

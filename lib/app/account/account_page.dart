@@ -467,6 +467,8 @@ class _LearningCard extends ConsumerWidget {
       initial: current,
       choices: choices,
       onSave: (value) async {
+        // A week needs a day: with none chosen, it stays as it was.
+        if (key == SettingKeys.weeklyPlan && value == null) return;
         final settings = ref.read(settingsRepositoryProvider);
         await settings.write(key, value ?? '');
       },
@@ -479,7 +481,10 @@ class _LearningCard extends ConsumerWidget {
     final given = _orNull(ref.watch(selfAssessedLevelProvider).value);
     final goal = LearnerGoal.fromName(ref.watch(goalSettingProvider).value);
     final language = _orNull(ref.watch(firstLanguageProvider).value);
-    final pace = StudyPace.fromName(ref.watch(studyPaceSettingProvider).value);
+    final plan = WeeklyPlan.stored(
+      plan: ref.watch(weeklyPlanSettingProvider).value,
+      pace: ref.watch(studyPaceSettingProvider).value,
+    );
 
     return _Card(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -527,21 +532,26 @@ class _LearningCard extends ConsumerWidget {
           ),
           const _RowDivider(),
           _ActionRow(
-            key: const ValueKey('edit-pace'),
+            key: const ValueKey('edit-week'),
             icon: Icons.schedule_rounded,
-            label: pace == null
-                ? 'Your weekly plan'
-                : '${pace.label}: ${pace.sessions} sessions a week',
+            label: plan == null
+                ? 'Your week'
+                : '${plan.daysLabel}, ${plan.minutes} min a day',
             color: AppColors.ink,
             onTap: () => _edit(
               context,
               ref,
-              title: 'How much time can you give?',
-              key: SettingKeys.studyPace,
-              current: pace?.name,
-              choices: (value, onChanged) => PaceChoices(
-                pace: StudyPace.fromName(value),
-                onChanged: (pace) => onChanged(pace.name),
+              title: 'Your week',
+              key: SettingKeys.weeklyPlan,
+              current: (plan ?? WeeklyPlan.standard).encode(),
+              choices: (value, onChanged) => RhythmPicker(
+                plan: WeeklyPlan.decode(value) ??
+                    WeeklyPlan(
+                      minutes: (plan ?? WeeklyPlan.standard).minutes,
+                      days: const {},
+                    ),
+                onChanged: (next) =>
+                    onChanged(next.days.isEmpty ? null : next.encode()),
               ),
             ),
           ),

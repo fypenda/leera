@@ -6,6 +6,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/common/widgets/load_failure.dart';
+import '../../../core/motion/leera_bubble.dart';
 import '../../../core/motion/motion.dart';
 import '../../../core/settings/settings.dart';
 import '../../../core/time/clock.dart';
@@ -406,6 +407,9 @@ class _Message extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      // Leera's bubble, nodding as the message arrives.
+      const _NoddingBubble(),
+      const SizedBox(height: AppSpacing.lg),
       Text(
         title,
         style: const TextStyle(
@@ -427,5 +431,35 @@ class _Message extends StatelessWidget {
         ),
       ),
     ],
+  );
+}
+
+/// The mascot, nodding once just after it appears.
+class _NoddingBubble extends StatefulWidget {
+  const _NoddingBubble();
+
+  @override
+  State<_NoddingBubble> createState() => _NoddingBubbleState();
+}
+
+class _NoddingBubbleState extends State<_NoddingBubble> {
+  var _nods = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _nods++);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => RiseIn(
+    child: LeeraBubble(
+      key: const ValueKey('review-bubble'),
+      size: 96,
+      nods: _nods,
+      color: AppColors.surface,
+    ),
   );
 }

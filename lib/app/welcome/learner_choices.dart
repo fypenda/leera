@@ -10,96 +10,115 @@ import '../theme/app_theme.dart';
 // The choices that describe the learner, shared by the welcome and the
 // account page.
 
-/// The levels offered, with how each feels from the inside.
+/// The levels offered: a name, and how each feels from the inside.
 const learnerLevels = [
-  ('A2', 'I get by in simple conversations'),
-  ('B1', 'I handle everyday situations'),
-  ('B2', 'I can discuss most topics'),
-  ('C1', 'I am fluent, and polishing'),
+  ('A2', 'Getting by', 'Simple conversations'),
+  ('B1', 'Everyday', 'Most daily situations'),
+  ('B2', 'Confident', 'Most topics'),
+  ('C1', 'Fluent', 'Polishing it'),
 ];
 
-/// One of a few options, as white cards; the chosen one has a dark border.
-class _Option extends StatelessWidget {
-  const _Option({
-    this.index = 0,
+/// Cards two by two, as wide as the room allows.
+class _Grid extends StatelessWidget {
+  const _Grid({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      const gap = 12.0;
+      final width = (box.maxWidth - gap) / 2;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: [
+          for (final child in children) SizedBox(width: width, child: child),
+        ],
+      );
+    },
+  );
+}
+
+/// One of a few options, as a card: a round badge, a name, a line. The
+/// chosen one takes [tint] and a dark border.
+class _Card extends StatelessWidget {
+  const _Card({
+    required this.index,
     required this.optionKey,
     required this.selected,
-    required this.leading,
+    required this.tint,
+    required this.badge,
     required this.title,
-    this.detail,
+    required this.detail,
     required this.onTap,
   });
 
-  /// Its place in the list: options arrive one after the other.
+  /// Its place in the grid: cards arrive one after the other.
   final int index;
   final Key optionKey;
   final bool selected;
-  final Widget leading;
+  final Color tint;
+  final Widget badge;
   final String title;
-  final String? detail;
+  final String detail;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) => RiseIn(
-    delay: Duration(milliseconds: 60 + index * 70),
+    delay: Duration(milliseconds: 100 + index * 60),
     child: SelectPop(
       selected: selected,
-      child: _card(),
-    ),
-  );
-
-  Widget _card() => Padding(
-    padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
-    child: Semantics(
-      inMutuallyExclusiveGroup: true,
-      checked: selected,
-      button: true,
-      child: Material(
-        color: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: selected ? AppColors.ink : AppColors.surfaceMuted,
-            width: selected ? 2.5 : 2,
+      child: Semantics(
+        inMutuallyExclusiveGroup: true,
+        checked: selected,
+        button: true,
+        child: Material(
+          color: selected ? tint : AppColors.surface,
+          animationDuration: const Duration(milliseconds: 200),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+            side: BorderSide(
+              color: selected ? AppColors.ink : AppColors.surfaceMuted,
+              width: selected ? 2.5 : 2,
+            ),
           ),
-        ),
-        child: InkWell(
-          key: optionKey,
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Haptics.selection();
-            onTap();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                leading,
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink,
-                        ),
+          child: InkWell(
+            key: optionKey,
+            borderRadius: BorderRadius.circular(22),
+            onTap: () {
+              Haptics.selection();
+              onTap();
+            },
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 132),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    badge,
+                    const SizedBox(height: AppSpacing.sm + 2),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        height: 1.25,
+                        color: AppColors.ink,
                       ),
-                      if (detail case final detail?)
-                        Text(
-                          detail,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      detail,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -108,6 +127,15 @@ class _Option extends StatelessWidget {
   );
 }
 
+Widget _badge({required Color color, required Widget child}) => AnimatedContainer(
+  duration: const Duration(milliseconds: 200),
+  width: 44,
+  height: 44,
+  alignment: Alignment.center,
+  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  child: child,
+);
+
 class LevelChoices extends StatelessWidget {
   const LevelChoices({super.key, required this.level, required this.onChanged});
 
@@ -115,35 +143,28 @@ class LevelChoices extends StatelessWidget {
   final ValueChanged<String> onChanged;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) => _Grid(
     children: [
-      for (final (index, (value, description)) in learnerLevels.indexed)
-        _Option(
+      for (final (index, (value, title, detail)) in learnerLevels.indexed)
+        _Card(
           index: index,
           optionKey: ValueKey('welcome-level-$value'),
           selected: value == level,
-          leading: Container(
-            width: 48,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: value == level
-                  ? AppColors.highlight
-                  : AppColors.primarySoft,
-              borderRadius: BorderRadius.circular(12),
-            ),
+          tint: AppColors.primarySoft,
+          badge: _badge(
+            color: value == level ? AppColors.ink : AppColors.highlight,
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: displayFontFamily,
-                fontSize: 17,
+                fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: AppColors.ink,
+                color: value == level ? AppColors.surface : AppColors.ink,
               ),
             ),
           ),
-          title: description,
+          title: title,
+          detail: detail,
           onTap: () => onChanged(value),
         ),
     ],
@@ -156,81 +177,402 @@ class GoalChoices extends StatelessWidget {
   final LearnerGoal? goal;
   final ValueChanged<LearnerGoal> onChanged;
 
-  static const _icons = {
-    LearnerGoal.work: Icons.work_outline_rounded,
-    LearnerGoal.studies: Icons.school_outlined,
-    LearnerGoal.exam: Icons.assignment_turned_in_outlined,
-    LearnerGoal.travel: Icons.flight_takeoff_rounded,
-    LearnerGoal.everyday: Icons.favorite_border_rounded,
+  static const _looks = {
+    LearnerGoal.work: (Icons.work_outline_rounded, AppColors.accentSoft),
+    LearnerGoal.studies: (Icons.school_outlined, AppColors.primarySoft),
+    LearnerGoal.exam: (Icons.assignment_turned_in_outlined, AppColors.coralSoft),
+    LearnerGoal.travel: (Icons.flight_takeoff_rounded, AppColors.accentSoft),
+    LearnerGoal.everyday: (Icons.favorite_border_rounded, AppColors.coralSoft),
   };
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) => _Grid(
     children: [
       for (final value in LearnerGoal.values)
-        _Option(
-          index: value.index,
-          optionKey: ValueKey('welcome-goal-${value.name}'),
-          selected: value == goal,
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: value == goal ? AppColors.highlight : AppColors.accentSoft,
-              borderRadius: BorderRadius.circular(12),
+        if (_looks[value] case (final icon, final tint)?)
+          _Card(
+            index: value.index,
+            optionKey: ValueKey('welcome-goal-${value.name}'),
+            selected: value == goal,
+            tint: tint,
+            badge: _badge(
+              color: value == goal ? AppColors.surface : tint,
+              child: Icon(icon, size: 20, color: AppColors.ink),
             ),
-            child: Icon(_icons[value], size: 20, color: AppColors.ink),
+            title: value.label,
+            detail: value.detail,
+            onTap: () => onChanged(value),
           ),
-          title: value.label,
-          detail: value.detail,
-          onTap: () => onChanged(value),
-        ),
     ],
   );
 }
 
-class PaceChoices extends StatelessWidget {
-  const PaceChoices({super.key, required this.pace, required this.onChanged});
+/// The week to keep: minutes a day and the days, under a card that
+/// shows the week they make as they change.
+class RhythmPicker extends StatefulWidget {
+  const RhythmPicker({super.key, required this.plan, required this.onChanged});
 
-  final StudyPace? pace;
-  final ValueChanged<StudyPace> onChanged;
+  final WeeklyPlan plan;
+  final ValueChanged<WeeklyPlan> onChanged;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      for (final value in StudyPace.values)
-        _Option(
-          index: value.index,
-          optionKey: ValueKey('welcome-pace-${value.name}'),
-          selected: value == pace,
-          leading: Container(
-            width: 48,
-            height: 40,
-            alignment: Alignment.center,
+  State<RhythmPicker> createState() => _RhythmPickerState();
+}
+
+class _RhythmPickerState extends State<RhythmPicker> {
+  /// The minutes it opened with, struck through once they change.
+  late final int _was = widget.plan.minutes;
+
+  static const _letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  static const _names = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+
+  static const _eyebrow = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 2,
+    color: AppColors.textMuted,
+  );
+
+  void _toggle(int weekday) {
+    Haptics.selection();
+    final days = {...widget.plan.days};
+    days.contains(weekday) ? days.remove(weekday) : days.add(weekday);
+    widget.onChanged(widget.plan.copyWith(days: days));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final plan = widget.plan;
+    final duration = motionOn(context)
+        ? const Duration(milliseconds: 300)
+        : Duration.zero;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // The week it makes.
+        RiseIn(
+          child: Container(
+            key: const ValueKey('rhythm-preview'),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: value == pace ? AppColors.highlight : AppColors.coralSoft,
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.ink.withValues(alpha: 0.08),
+                  blurRadius: 30,
+                  offset: const Offset(0, 12),
+                ),
+              ],
             ),
-            child: Text(
-              '${value.minutesADay}′',
-              style: const TextStyle(
-                fontFamily: displayFontFamily,
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: AppColors.ink,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      padding: const EdgeInsets.only(bottom: 14),
+                      alignment: Alignment.bottomCenter,
+                      decoration: const BoxDecoration(
+                        color: AppColors.highlight,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const LogoBars(height: 23, barWidth: 7),
+                    ),
+                    const Spacer(),
+                    ExcludeSemantics(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              for (var day = 1; day <= 7; day++) ...[
+                                if (day > 1) const SizedBox(width: 4),
+                                AnimatedContainer(
+                                  duration: duration,
+                                  curve: Curves.easeOutBack,
+                                  width: 5,
+                                  height: plan.days.contains(day) ? 22 : 12,
+                                  decoration: BoxDecoration(
+                                    color: plan.days.contains(day)
+                                        ? AppColors.ink
+                                        : AppColors.surfaceMuted,
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${plan.sessions} / 7',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  plan.sessions == 1
+                      ? '1 topic a week'
+                      : '${plan.sessions} topics a week',
+                  key: const ValueKey('rhythm-headline'),
+                  style: const TextStyle(
+                    fontFamily: displayFontFamily,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        plan.days.isEmpty
+                            ? 'Choose your days below'
+                            : '${plan.daysLabel} · ${plan.minutes} min a day',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                    if (plan.reviews > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySoft,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          plan.reviews == 1
+                              ? '1 review a week'
+                              : '${plan.reviews} reviews a week',
+                          key: const ValueKey('rhythm-reviews'),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
           ),
-          title: value.label,
-          detail:
-              '${value.detail} · ${value.sessions} sessions, '
-              '${value.reviews} reviews a week',
-          onTap: () => onChanged(value),
         ),
-    ],
-  );
+        const SizedBox(height: AppSpacing.lg),
+        const RiseIn(
+          delay: Duration(milliseconds: 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('MAKE IT A HABIT', style: _eyebrow),
+              SizedBox(height: 2),
+              Text(
+                'Small enough to keep, every week.',
+                style: TextStyle(fontSize: 15, color: AppColors.ink),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        // Minutes a day.
+        RiseIn(
+          delay: const Duration(milliseconds: 180),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '${plan.minutes}',
+                      style: const TextStyle(
+                        fontFamily: displayFontFamily,
+                        fontSize: 40,
+                        fontWeight: FontWeight.w800,
+                        height: 1,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    const Expanded(
+                      child: Text(
+                        'minutes a day',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                    if (plan.minutes != _was)
+                      Text(
+                        'was $_was',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textMuted,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                  ],
+                ),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: AppColors.ink,
+                    inactiveTrackColor: AppColors.surfaceMuted,
+                    thumbColor: AppColors.ink,
+                    overlayColor: AppColors.ink.withValues(alpha: 0.08),
+                    activeTickMarkColor: AppColors.surface,
+                    inactiveTickMarkColor: AppColors.textMuted,
+                    trackHeight: 6,
+                  ),
+                  child: Slider(
+                    key: const ValueKey('rhythm-minutes'),
+                    min: WeeklyPlan.minuteSteps.first.toDouble(),
+                    max: WeeklyPlan.minuteSteps.last.toDouble(),
+                    divisions: WeeklyPlan.minuteSteps.length - 1,
+                    value: plan.minutes.toDouble(),
+                    semanticFormatterCallback: (value) =>
+                        '${value.round()} minutes a day',
+                    onChanged: (value) {
+                      final minutes = value.round();
+                      if (minutes == plan.minutes) return;
+                      Haptics.selection();
+                      widget.onChanged(plan.copyWith(minutes: minutes));
+                    },
+                  ),
+                ),
+                const ExcludeSemantics(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('10', style: _eyebrow),
+                        Text('20', style: _eyebrow),
+                        Text('30+', style: _eyebrow),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        // The days.
+        RiseIn(
+          delay: const Duration(milliseconds: 260),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('YOUR DAYS', style: _eyebrow),
+              const SizedBox(height: AppSpacing.sm + 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (var day = 1; day <= 7; day++)
+                    Semantics(
+                      button: true,
+                      toggled: plan.days.contains(day),
+                      label: _names[day - 1],
+                      excludeSemantics: true,
+                      child: SelectPop(
+                        selected: plan.days.contains(day),
+                        child: GestureDetector(
+                          key: ValueKey('rhythm-day-$day'),
+                          onTap: () => _toggle(day),
+                          child: AnimatedContainer(
+                            duration: duration,
+                            width: 42,
+                            height: 42,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: plan.days.contains(day)
+                                  ? AppColors.ink
+                                  : AppColors.surface,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              _letters[day - 1],
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: plan.days.contains(day)
+                                    ? AppColors.surface
+                                    : AppColors.textMuted,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.coral,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    plan.days.isEmpty
+                        ? 'Choose at least one day'
+                        : 'One session on each day you chose',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// The first language: one of the common ones, or another one typed.

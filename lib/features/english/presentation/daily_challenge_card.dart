@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_colors.dart';
@@ -15,9 +17,17 @@ class DailyChallengeCard extends StatefulWidget {
     super.key,
     required this.onStart,
     this.continuing = false,
+    this.autoStart = false,
+    this.onAutoStarted,
   });
 
   final VoidCallback onStart;
+
+  /// Roll as soon as the card is shown, once: the welcome has just ended.
+  final bool autoStart;
+
+  /// Called when the automatic roll begins, so it is not asked again.
+  final Future<void> Function()? onAutoStarted;
 
   /// A session is already in progress: the card offers to continue it.
   final bool continuing;
@@ -28,6 +38,35 @@ class DailyChallengeCard extends StatefulWidget {
 
 class _DailyChallengeCardState extends State<DailyChallengeCard> {
   var _rolling = false;
+  var _autoStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _maybeAutoStart();
+  }
+
+  @override
+  void didUpdateWidget(DailyChallengeCard old) {
+    super.didUpdateWidget(old);
+    _maybeAutoStart();
+  }
+
+  /// The setting is read after the first frame: the roll starts when it
+  /// arrives, once.
+  void _maybeAutoStart() {
+    if (!widget.autoStart || _autoStarted) return;
+    _autoStarted = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      try {
+        await widget.onAutoStarted?.call();
+      } on Object catch (e) {
+        debugPrint('Clearing the first roll failed: $e');
+      }
+      if (mounted) unawaited(_start());
+    });
+  }
 
   Future<void> _start() async {
     if (_rolling) return;

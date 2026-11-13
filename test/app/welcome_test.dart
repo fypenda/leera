@@ -5,7 +5,7 @@ import 'package:leera/app/plus/plus_page.dart';
 import 'package:leera/app/welcome/welcome_page.dart';
 import 'package:leera/core/settings/settings.dart';
 import 'package:leera/features/english/data/preference_repository_providers.dart';
-import 'package:leera/features/english/presentation/english_page.dart';
+import 'package:leera/features/english/presentation/english_topic_page.dart';
 
 import '../support/pump_app.dart';
 
@@ -21,6 +21,16 @@ Future<void> _tap(WidgetTester tester, Finder target) async {
 Future<T> _read<T>(WidgetTester tester, Stream<T> stream) =>
     runInApp(tester, () => stream.first);
 
+/// From the splash to the level question.
+Future<void> _pastTheSplash(WidgetTester tester) async {
+  expect(find.text('FLUENCY THROUGH REAL TOPICS'), findsOneWidget);
+  // The splash moves on by itself.
+  await tester.pump(const Duration(milliseconds: 2300));
+  await settle(tester);
+  expect(find.textContaining('Real fluency.', findRichText: true), findsOneWidget);
+  await _tap(tester, _key('welcome-next'));
+}
+
 void main() {
   appTest('the welcome comes first, once, and keeps what was chosen', (
     tester,
@@ -32,8 +42,8 @@ void main() {
     );
 
     expect(find.byType(WelcomePage), findsOneWidget);
-    expect(find.text('Welcome to Leera'), findsOneWidget);
-    await _tap(tester, _key('welcome-next'));
+    expect(_key('welcome-bubble'), findsOneWidget);
+    await _pastTheSplash(tester);
 
     // A level must be chosen to go on.
     final next = tester.widget<FilledButton>(_key('welcome-next'));
@@ -62,19 +72,23 @@ void main() {
     await _tap(tester, _key('welcome-theme-Africa'));
     await _tap(tester, _key('welcome-next'));
 
-    // A pace must be chosen: it makes the weekly plan.
+    // The week: Monday to Friday at first; the card follows the days.
+    expect(find.text('5 topics a week'), findsOneWidget);
+    expect(find.text('3 reviews a week'), findsOneWidget);
+    await _tap(tester, _key('rhythm-day-6'));
+    expect(find.text('6 topics a week'), findsOneWidget);
+    // With no day, there is no week to set.
+    for (var day = 1; day <= 6; day++) {
+      await _tap(tester, _key('rhythm-day-$day'));
+    }
     expect(
       tester.widget<FilledButton>(_key('welcome-next')).onPressed,
       isNull,
     );
-    await _tap(tester, _key('welcome-pace-regular'));
-    await _tap(tester, _key('welcome-next'));
-
-    expect(_key('welcome-plan'), findsOneWidget);
-    expect(find.text('Starting at B2, aiming for C1'), findsOneWidget);
-    expect(find.text('For work'), findsOneWidget);
-    expect(find.text('Corrections that know Pulaar'), findsOneWidget);
-    expect(find.text('Your themes: Africa, Science'), findsOneWidget);
+    for (final day in [1, 3, 5]) {
+      await _tap(tester, _key('rhythm-day-$day'));
+    }
+    expect(find.text('Set my week'), findsOneWidget);
     await _tap(tester, _key('welcome-next'));
 
     // Free or Plus, then the free plan.
@@ -83,13 +97,21 @@ void main() {
     expect(find.text('3 a day'), findsOneWidget);
     await _tap(tester, _key('welcome-free'));
 
-    expect(find.byType(EnglishPage), findsOneWidget);
-    // The weekly plan, on Today.
-    expect(find.text('0 / 5'), findsOneWidget);
-    expect(find.text('0 / 3'), findsOneWidget);
-    expect(find.text('Your estimate · Goal: C1'), findsOneWidget);
+    // Day 1: what was chosen, and the first topic to roll.
+    expect(_key('welcome-day-one'), findsOneWidget);
+    expect(find.text('B2 → C1'), findsOneWidget);
+    expect(find.text('3 sessions a week'), findsOneWidget);
+    expect(find.text('Roll my first topic'), findsOneWidget);
+    await _tap(tester, _key('welcome-next'));
+
+    // Today rolls the first topic as it opens.
+    expect(find.byType(EnglishTopicPage), findsOneWidget);
     final settings = container.read(settingsRepositoryProvider);
     expect(await _read(tester, settings.watch(SettingKeys.welcome)), 'done');
+    expect(
+      await _read(tester, settings.watch(SettingKeys.rollOnArrival)),
+      '',
+    );
     expect(
       await _read(tester, settings.watch(SettingKeys.selfAssessedLevel)),
       'B2',
@@ -100,8 +122,8 @@ void main() {
       'Pulaar',
     );
     expect(
-      await _read(tester, settings.watch(SettingKeys.studyPace)),
-      'regular',
+      await _read(tester, settings.watch(SettingKeys.weeklyPlan)),
+      '20|1,3,5',
     );
     expect(
       await _read(
@@ -113,10 +135,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  appTest('the splash moves on with a tap too', (tester) async {
+    await pumpEnglishApp(tester, iPhonePortrait, welcomed: false);
+    await _tap(tester, _key('welcome-splash'));
+    expect(find.textContaining('Real fluency.', findRichText: true), findsOneWidget);
+  });
+
   appTest('going back keeps the choices made', (tester) async {
     await pumpEnglishApp(tester, iPhonePortrait, welcomed: false);
 
-    await _tap(tester, _key('welcome-next'));
+    await _pastTheSplash(tester);
     await _tap(tester, _key('welcome-level-A2'));
     await _tap(tester, _key('welcome-next'));
     await _tap(tester, _key('welcome-back'));
@@ -125,18 +153,16 @@ void main() {
     expect(next.onPressed, isNotNull);
   });
 
-  appTest('Leera Plus opens from the last step, and comes back to it', (
+  appTest('Leera Plus opens from the last question, and comes back to it', (
     tester,
   ) async {
     await pumpEnglishApp(tester, iPhonePortrait, welcomed: false);
-    await _tap(tester, _key('welcome-next'));
+    await _pastTheSplash(tester);
     await _tap(tester, _key('welcome-level-B1'));
     await _tap(tester, _key('welcome-next'));
     await _tap(tester, _key('welcome-goal-travel'));
     await _tap(tester, _key('welcome-next'));
     await _tap(tester, _key('welcome-next'));
-    await _tap(tester, _key('welcome-next'));
-    await _tap(tester, _key('welcome-pace-light'));
     await _tap(tester, _key('welcome-next'));
     await _tap(tester, _key('welcome-next'));
 
@@ -145,5 +171,19 @@ void main() {
 
     await _tap(tester, _key('plus-close'));
     expect(_key('welcome-compare'), findsOneWidget);
+  });
+
+  appTest('Today shows the week that was set', (tester) async {
+    final container = await pumpEnglishApp(tester, iPhonePortrait);
+    await runInApp(
+      tester,
+      () => container
+          .read(settingsRepositoryProvider)
+          .write(SettingKeys.weeklyPlan, '30|1,2,3,4,5,6,7'),
+    );
+    await settle(tester);
+
+    expect(find.text('0 / 7'), findsOneWidget);
+    expect(find.text('0 / 4'), findsOneWidget);
   });
 }
