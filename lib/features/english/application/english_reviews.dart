@@ -4,15 +4,20 @@ import '../data/preference_repository_providers.dart';
 import '../domain/kept_words.dart';
 import '../domain/word_review.dart';
 import 'english_feedback.dart';
+import 'english_idioms.dart';
 
 final wordReviewsProvider = StreamProvider<Map<String, WordReview>>(
   (ref) => ref.watch(wordReviewRepositoryProvider).watchReviews(),
 );
 
-/// Every word kept from the corrections, the latest first.
-final keptWordsProvider = Provider<AsyncValue<List<KeptWord>>>(
-  (ref) => ref.watch(feedbacksProvider).whenData(keptWords),
-);
+/// Every word kept from the corrections and the expressions of the day,
+/// the latest first.
+final keptWordsProvider = Provider<AsyncValue<List<KeptWord>>>((ref) {
+  final ofTheDay = ref.watch(keptIdiomsProvider);
+  return ref
+      .watch(feedbacksProvider)
+      .whenData((feedbacks) => keptWords(feedbacks, ofTheDay: ofTheDay));
+});
 
 /// By word key: true if the person knows it, false if they want to learn
 /// it. Words never sorted are not in it.

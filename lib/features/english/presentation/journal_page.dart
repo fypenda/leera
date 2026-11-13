@@ -13,6 +13,7 @@ import '../../../core/time/calendar_date.dart';
 import '../../../core/time/date_formatting.dart';
 import '../../../core/time/today.dart';
 import '../application/english_feedback.dart';
+import '../application/english_idioms.dart';
 import '../application/english_reviews.dart';
 import '../application/english_sessions.dart';
 import '../data/topic_catalog.dart';
@@ -64,7 +65,10 @@ class _JournalPageState extends ConsumerState<JournalPage> {
         final sessions = {
           for (final session in stats.completed) session.id: session,
         };
-        final words = keptWords(feedbacks);
+        final words = keptWords(
+          feedbacks,
+          ofTheDay: ref.watch(keptIdiomsProvider),
+        );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -434,7 +438,7 @@ class _WordCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 [
-                  ?topic,
+                  if (word.ofTheDay) 'Expression of the day' else ?topic,
                   formatRelativeDay(CalendarDate.ofLocal(word.keptAt), today),
                 ].join(' · '),
                 maxLines: 1,

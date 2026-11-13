@@ -26,6 +26,36 @@ void main() {
     ]);
   });
 
+  test('the expressions of the day kept sort among the corrections', () {
+    final words = keptWords(
+      {
+        'old': sampleFeedback(
+          createdAt: DateTime.utc(2026, 10, 1),
+          vocabulary: const [VocabularyItem('chokepoint', 'a narrow passage')],
+        ),
+        'new': sampleFeedback(
+          createdAt: DateTime.utc(2026, 10, 3),
+          vocabulary: const [VocabularyItem('to bottleneck', 'to slow down')],
+        ),
+      },
+      ofTheDay: [
+        KeptWord(
+          item: const VocabularyItem('break the ice', 'to relax people'),
+          sessionId: 'idiom:break-the-ice',
+          keptAt: DateTime.utc(2026, 10, 2),
+          ofTheDay: true,
+        ),
+      ],
+    );
+
+    expect([for (final w in words) w.item.expression], [
+      'to bottleneck',
+      'break the ice',
+      'chokepoint',
+    ]);
+    expect(words[1].ofTheDay, isTrue);
+  });
+
   test('search looks in the expression and the meaning, ignoring case', () {
     final words = keptWords({
       's': sampleFeedback(

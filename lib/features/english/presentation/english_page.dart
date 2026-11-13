@@ -25,6 +25,7 @@ import '../domain/session_feedback.dart';
 import '../domain/session_recording.dart';
 import '../domain/study_pace.dart';
 import 'daily_challenge_card.dart';
+import 'idiom_gift.dart';
 import 'session_navigation.dart';
 
 /// The home page, "Today" in the Leera design: a greeting, the week and its
@@ -116,6 +117,9 @@ class EnglishPage extends ConsumerWidget {
                         ),
                       ),
                   ],
+                  const SizedBox(height: AppSpacing.xl - 4),
+                  // Today's expression, a gift opened by the day's work.
+                  const IdiomGiftCard(),
                   const SizedBox(height: AppSpacing.xl - 4),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,

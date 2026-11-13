@@ -8,6 +8,7 @@ class KeptWord {
     required this.sessionId,
     required this.keptAt,
     this.phrasing = false,
+    this.ofTheDay = false,
   });
 
   final VocabularyItem item;
@@ -15,7 +16,11 @@ class KeptWord {
   /// True for a more natural phrasing of the person's own words.
   final bool phrasing;
 
-  /// The session whose correction suggested it.
+  /// True for an expression of the day, kept from its gift.
+  final bool ofTheDay;
+
+  /// The session whose correction suggested it; for an expression of the
+  /// day, no session's.
   final String sessionId;
   final DateTime keptAt;
 
@@ -54,14 +59,22 @@ List<KeptWord> wordsOf(String sessionId, SessionFeedback feedback) => [
 ];
 
 /// Every expression and phrasing kept so far, each once (where it came
-/// last), the latest first. [feedbacks] maps session ids to corrections.
-List<KeptWord> keptWords(Map<String, SessionFeedback> feedbacks) {
-  final entries = feedbacks.entries.toList()
-    ..sort((a, b) => b.value.createdAt.compareTo(a.value.createdAt));
+/// last), the latest first. [feedbacks] maps session ids to corrections;
+/// [ofTheDay] are the expressions of the day kept.
+List<KeptWord> keptWords(
+  Map<String, SessionFeedback> feedbacks, {
+  List<KeptWord> ofTheDay = const [],
+}) {
+  // Each correction's words stay together, in their order.
+  final groups = [
+    for (final MapEntry(key: sessionId, value: feedback) in feedbacks.entries)
+      (feedback.createdAt, wordsOf(sessionId, feedback)),
+    for (final word in ofTheDay) (word.keptAt, [word]),
+  ]..sort((a, b) => b.$1.compareTo(a.$1));
   final seen = <String>{};
   return [
-    for (final MapEntry(key: sessionId, value: feedback) in entries)
-      for (final word in wordsOf(sessionId, feedback))
+    for (final (_, words) in groups)
+      for (final word in words)
         if (seen.add(word.key)) word,
   ];
 }

@@ -57,6 +57,9 @@ abstract final class SettingKeys {
   /// ended on "Roll my first topic".
   static const rollOnArrival = 'roll_on_arrival';
 
+  /// The expressions of the day opened, as `encodeGifts` writes them.
+  static const idiomGifts = 'idiom_gifts';
+
   /// The days a review round was finished, `YYYY-MM-DD`, comma separated.
   static const reviewDays = 'review_days';
 }
@@ -108,4 +111,9 @@ final rollOnArrivalProvider = StreamProvider<bool>(
       .watch(settingsRepositoryProvider)
       .watch(SettingKeys.rollOnArrival)
       .map((value) => value == 'yes'),
+);
+
+/// The expressions of the day opened, as stored.
+final idiomGiftsSettingProvider = StreamProvider<String?>(
+  (ref) => ref.watch(settingsRepositoryProvider).watch(SettingKeys.idiomGifts),
 );
