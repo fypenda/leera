@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/motion/motion.dart';
 import '../../features/english/domain/learner_profile.dart';
 import '../../features/english/domain/study_pace.dart';
 import '../theme/app_colors.dart';
@@ -20,6 +21,7 @@ const learnerLevels = [
 /// One of a few options, as white cards; the chosen one has a dark border.
 class _Option extends StatelessWidget {
   const _Option({
+    this.index = 0,
     required this.optionKey,
     required this.selected,
     required this.leading,
@@ -28,6 +30,8 @@ class _Option extends StatelessWidget {
     required this.onTap,
   });
 
+  /// Its place in the list: options arrive one after the other.
+  final int index;
   final Key optionKey;
   final bool selected;
   final Widget leading;
@@ -36,7 +40,15 @@ class _Option extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) => RiseIn(
+    delay: Duration(milliseconds: 60 + index * 70),
+    child: SelectPop(
+      selected: selected,
+      child: _card(),
+    ),
+  );
+
+  Widget _card() => Padding(
     padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
     child: Semantics(
       inMutuallyExclusiveGroup: true,
@@ -54,7 +66,10 @@ class _Option extends StatelessWidget {
         child: InkWell(
           key: optionKey,
           borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
+          onTap: () {
+            Haptics.selection();
+            onTap();
+          },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
@@ -103,8 +118,9 @@ class LevelChoices extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      for (final (value, description) in learnerLevels)
+      for (final (index, (value, description)) in learnerLevels.indexed)
         _Option(
+          index: index,
           optionKey: ValueKey('welcome-level-$value'),
           selected: value == level,
           leading: Container(
@@ -154,6 +170,7 @@ class GoalChoices extends StatelessWidget {
     children: [
       for (final value in LearnerGoal.values)
         _Option(
+          index: value.index,
           optionKey: ValueKey('welcome-goal-${value.name}'),
           selected: value == goal,
           leading: Container(
@@ -185,6 +202,7 @@ class PaceChoices extends StatelessWidget {
     children: [
       for (final value in StudyPace.values)
         _Option(
+          index: value.index,
           optionKey: ValueKey('welcome-pace-${value.name}'),
           selected: value == pace,
           leading: Container(
@@ -258,7 +276,10 @@ class _FirstLanguageChoicesState extends State<FirstLanguageChoices> {
           color: selected ? AppColors.primary : AppColors.surfaceMuted,
         ),
         shape: const StadiumBorder(),
-        onSelected: (_) => onTap(),
+        onSelected: (_) {
+          Haptics.selection();
+          onTap();
+        },
       );
 
   @override

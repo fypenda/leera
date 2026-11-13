@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_actions.dart';
 import '../../core/auth/quota.dart';
 import '../../core/auth/session.dart';
+import '../../core/motion/motion.dart';
 import '../../core/settings/settings.dart';
 import '../../features/english/application/english_themes.dart';
 import '../../features/english/data/preference_repository_providers.dart';
@@ -160,7 +161,12 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
         if (!didPop && _step > 0) setState(() => _step--);
       },
       child: Scaffold(
-        body: SafeArea(
+        body: Stack(
+          children: [
+            // A coloured band behind the top, a new colour at each step:
+            // tall on the first, with the sun.
+            _Band(step: _step),
+            Positioned.fill(child: SafeArea(
           child: Align(
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
@@ -195,9 +201,32 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                     ),
                     const SizedBox(height: AppSpacing.xl),
                     Expanded(
-                      child: SingleChildScrollView(
-                        key: ValueKey('welcome-step-$_step'),
-                        child: body,
+                      // Each step slides in from the right.
+                      child: AnimatedSwitcher(
+                        duration: motionOn(context)
+                            ? const Duration(milliseconds: 380)
+                            : Duration.zero,
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        transitionBuilder: (child, animation) =>
+                            FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween(
+                                  begin: const Offset(0.12, 0),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            ),
+                        layoutBuilder: (current, previous) => Stack(
+                          alignment: Alignment.topCenter,
+                          children: [?current],
+                        ),
+                        child: SingleChildScrollView(
+                          key: ValueKey('welcome-step-$_step'),
+                          child: body,
+                        ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -215,6 +244,8 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
               ),
             ),
           ),
+        )),
+          ],
         ),
       ),
     );
@@ -240,7 +271,10 @@ class _Progress extends StatelessWidget {
             width: i == step ? 28 : 12,
             height: 6,
             decoration: BoxDecoration(
-              color: i <= step ? AppColors.highlight : AppColors.surfaceMuted,
+              // Ink: it sits on the coloured band.
+              color: i <= step
+                  ? AppColors.ink
+                  : AppColors.ink.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(3),
             ),
           ),
@@ -320,16 +354,32 @@ class _HowItWorks extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Image.asset(
-          'assets/brand/logo.png',
-          width: 72,
-          height: 72,
-          semanticLabel: 'Leera logo',
+      // The logo's bubble, on the band, its bars bobbing.
+      Center(
+        child: Semantics(
+          label: 'Leera logo',
+          child: Container(
+            width: 150,
+            height: 118,
+            padding: const EdgeInsets.only(bottom: 26),
+            alignment: Alignment.bottomCenter,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(34),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.ink.withValues(alpha: 0.15),
+                  blurRadius: 40,
+                  offset: const Offset(0, 18),
+                ),
+              ],
+            ),
+            child: const LogoBars(height: 66, barWidth: 20),
+          ),
         ),
       ),
-      const SizedBox(height: AppSpacing.lg),
+      // Below the band.
+      const SizedBox(height: 100),
       const _Title(
         'Welcome to Leera',
         detail: 'Fluency through real topics. Here is how a session goes.',
@@ -484,7 +534,10 @@ class _ThemesStep extends ConsumerWidget {
                       : AppColors.surfaceMuted,
                 ),
                 shape: const StadiumBorder(),
-                onSelected: (_) => onToggle(theme),
+                onSelected: (_) {
+                  Haptics.selection();
+                  onToggle(theme);
+                },
               ),
           ],
         ),
@@ -802,4 +855,65 @@ class _Line extends StatelessWidget {
       ),
     ],
   );
+}
+
+/// The coloured band behind the top of the welcome: tall with the sun on
+/// the first step, shorter after, a new colour at each step.
+class _Band extends StatelessWidget {
+  const _Band({required this.step});
+
+  final int step;
+
+  static const _colors = [
+    AppColors.highlight,
+    AppColors.primarySoft,
+    AppColors.accentSoft,
+    AppColors.coralSoft,
+    AppColors.primarySoft,
+    AppColors.accentSoft,
+    AppColors.coralSoft,
+    AppColors.highlight,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top;
+    final duration = motionOn(context)
+        ? const Duration(milliseconds: 450)
+        : Duration.zero;
+    return Positioned(
+      left: 0,
+      right: 0,
+      top: 0,
+      child: ExcludeSemantics(
+        child: AnimatedContainer(
+          duration: duration,
+          curve: Curves.easeOutCubic,
+          height: top + (step == 0 ? 300 : 150),
+          clipBehavior: Clip.hardEdge,
+          decoration: BoxDecoration(color: _colors[step % _colors.length]),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -60,
+                top: -60,
+                child: AnimatedOpacity(
+                  duration: duration,
+                  opacity: step == 0 ? 1 : 0,
+                  child: Container(
+                    width: 190,
+                    height: 190,
+                    decoration: const BoxDecoration(
+                      color: AppColors.accent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
