@@ -6,12 +6,14 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/common/widgets/load_failure.dart';
+import '../../../core/settings/settings.dart';
 import '../../../core/time/clock.dart';
 import '../../../core/time/date_formatting.dart';
 import '../../../core/time/today.dart';
 import '../application/english_reviews.dart';
 import '../data/preference_repository_providers.dart';
 import '../domain/kept_words.dart';
+import '../domain/study_pace.dart';
 import '../domain/word_review.dart';
 import '../english_routes.dart';
 import 'session_chrome.dart';
@@ -84,6 +86,23 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
       _index++;
       _revealed = false;
     });
+    if (_index >= queue.length) await _recordRound();
+  }
+
+  /// A round finished: today counts as a review day in the weekly plan.
+  Future<void> _recordRound() async {
+    try {
+      final settings = ref.read(settingsRepositoryProvider);
+      final days = parseReviewDays(
+        await settings.watch(SettingKeys.reviewDays).first,
+      );
+      await settings.write(
+        SettingKeys.reviewDays,
+        recordReviewDay(days, ref.read(todayProvider)),
+      );
+    } on Object catch (e) {
+      debugPrint('Recording the review day failed: $e');
+    }
   }
 
   @override

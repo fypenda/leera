@@ -41,6 +41,15 @@ class PracticeStats {
     return days;
   }
 
+  /// Completed sessions in the week of [today], Monday to Sunday.
+  int get completedThisWeek {
+    final monday = today.startOfWeek;
+    return completed.where((session) {
+      final offset = monday.daysUntil(CalendarDate.ofLocal(session.completedAt!));
+      return offset >= 0 && offset < DateTime.daysPerWeek;
+    }).length;
+  }
+
   /// Completed sessions in the calendar month of [today].
   int get completedThisMonth => completed.where((session) {
     final day = CalendarDate.ofLocal(session.completedAt!);

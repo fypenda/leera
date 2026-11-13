@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:leera/app/plus/plus_page.dart';
 import 'package:leera/app/welcome/welcome_page.dart';
 import 'package:leera/core/settings/settings.dart';
 import 'package:leera/features/english/data/preference_repository_providers.dart';
@@ -61,13 +62,31 @@ void main() {
     await _tap(tester, _key('welcome-theme-Africa'));
     await _tap(tester, _key('welcome-next'));
 
+    // A pace must be chosen: it makes the weekly plan.
+    expect(
+      tester.widget<FilledButton>(_key('welcome-next')).onPressed,
+      isNull,
+    );
+    await _tap(tester, _key('welcome-pace-regular'));
+    await _tap(tester, _key('welcome-next'));
+
+    expect(_key('welcome-plan'), findsOneWidget);
     expect(find.text('Starting at B2, aiming for C1'), findsOneWidget);
     expect(find.text('For work'), findsOneWidget);
     expect(find.text('Corrections that know Pulaar'), findsOneWidget);
     expect(find.text('Your themes: Africa, Science'), findsOneWidget);
     await _tap(tester, _key('welcome-next'));
 
+    // Free or Plus, then the free plan.
+    expect(_key('welcome-compare'), findsOneWidget);
+    expect(find.text('1 a week'), findsOneWidget);
+    expect(find.text('3 a day'), findsOneWidget);
+    await _tap(tester, _key('welcome-free'));
+
     expect(find.byType(EnglishPage), findsOneWidget);
+    // The weekly plan, on Today.
+    expect(find.text('0 / 5'), findsOneWidget);
+    expect(find.text('0 / 3'), findsOneWidget);
     expect(find.text('Your estimate · Goal: C1'), findsOneWidget);
     final settings = container.read(settingsRepositoryProvider);
     expect(await _read(tester, settings.watch(SettingKeys.welcome)), 'done');
@@ -79,6 +98,10 @@ void main() {
     expect(
       await _read(tester, settings.watch(SettingKeys.firstLanguage)),
       'Pulaar',
+    );
+    expect(
+      await _read(tester, settings.watch(SettingKeys.studyPace)),
+      'regular',
     );
     expect(
       await _read(
@@ -100,5 +123,27 @@ void main() {
 
     final next = tester.widget<FilledButton>(_key('welcome-next'));
     expect(next.onPressed, isNotNull);
+  });
+
+  appTest('Leera Plus opens from the last step, and comes back to it', (
+    tester,
+  ) async {
+    await pumpEnglishApp(tester, iPhonePortrait, welcomed: false);
+    await _tap(tester, _key('welcome-next'));
+    await _tap(tester, _key('welcome-level-B1'));
+    await _tap(tester, _key('welcome-next'));
+    await _tap(tester, _key('welcome-goal-travel'));
+    await _tap(tester, _key('welcome-next'));
+    await _tap(tester, _key('welcome-next'));
+    await _tap(tester, _key('welcome-next'));
+    await _tap(tester, _key('welcome-pace-light'));
+    await _tap(tester, _key('welcome-next'));
+    await _tap(tester, _key('welcome-next'));
+
+    await _tap(tester, _key('welcome-next'));
+    expect(find.byType(PlusPage), findsOneWidget);
+
+    await _tap(tester, _key('plus-close'));
+    expect(_key('welcome-compare'), findsOneWidget);
   });
 }

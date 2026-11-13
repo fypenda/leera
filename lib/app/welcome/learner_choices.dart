@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../features/english/domain/learner_profile.dart';
+import '../../features/english/domain/study_pace.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
@@ -166,6 +167,48 @@ class GoalChoices extends StatelessWidget {
           ),
           title: value.label,
           detail: value.detail,
+          onTap: () => onChanged(value),
+        ),
+    ],
+  );
+}
+
+class PaceChoices extends StatelessWidget {
+  const PaceChoices({super.key, required this.pace, required this.onChanged});
+
+  final StudyPace? pace;
+  final ValueChanged<StudyPace> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (final value in StudyPace.values)
+        _Option(
+          optionKey: ValueKey('welcome-pace-${value.name}'),
+          selected: value == pace,
+          leading: Container(
+            width: 48,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: value == pace ? AppColors.highlight : AppColors.coralSoft,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '${value.minutesADay}′',
+              style: const TextStyle(
+                fontFamily: displayFontFamily,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+              ),
+            ),
+          ),
+          title: value.label,
+          detail:
+              '${value.detail} · ${value.sessions} sessions, '
+              '${value.reviews} reviews a week',
           onTap: () => onChanged(value),
         ),
     ],

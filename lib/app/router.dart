@@ -23,6 +23,7 @@ import 'welcome/welcome_page.dart';
 const _startingPath = '/starting';
 const _signInPath = '/sign-in';
 const _welcomePath = '/welcome';
+const _plusPath = '/plus';
 
 /// The app's routes: signing in, the tabs (Today, Explore, Journal,
 /// Progress), the three
@@ -72,7 +73,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (welcome == null) {
         return location == _signInPath ? _startingPath : null;
       }
-      if (!welcome) return location == _welcomePath ? null : _welcomePath;
+      // Leera Plus can be opened from the welcome's last step.
+      if (!welcome) {
+        return location == _welcomePath || location == _plusPath
+            ? null
+            : _welcomePath;
+      }
       if (location == _signInPath ||
           location == _startingPath ||
           location == _welcomePath) {
@@ -156,7 +162,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ReviewPage(),
       ),
       GoRoute(
-        path: '/plus',
+        path: _plusPath,
         name: plusRouteName,
         builder: (context, state) => const PlusPage(),
       ),

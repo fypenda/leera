@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/auth/auth_actions.dart';
+import '../../core/auth/quota.dart';
+import '../../core/auth/session.dart';
 import '../../core/settings/settings.dart';
 import '../../features/english/application/english_themes.dart';
 import '../../features/english/data/preference_repository_providers.dart';
 import '../../features/english/domain/learner_profile.dart';
+import '../../features/english/domain/study_pace.dart';
 import '../../features/english/presentation/session_chrome.dart';
 import '../../features/english/presentation/theme_style.dart';
 import '../theme/app_colors.dart';
@@ -29,13 +34,14 @@ class WelcomePage extends ConsumerStatefulWidget {
 }
 
 class _WelcomePageState extends ConsumerState<WelcomePage> {
-  static const _steps = 6;
+  static const _steps = 8;
   static const double _maxWidth = 560;
 
   var _step = 0;
   String? _level;
   LearnerGoal? _goal;
   String? _language;
+  StudyPace? _pace;
   final _themes = <String>{};
   var _saving = false;
 
@@ -51,6 +57,9 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
       }
       if (cleanFirstLanguage(_language) case final language?) {
         await settings.write(SettingKeys.firstLanguage, language);
+      }
+      if (_pace case final pace?) {
+        await settings.write(SettingKeys.studyPace, pace.name);
       }
       if (_themes.isNotEmpty) {
         await ref.read(themePreferenceRepositoryProvider).setThemes(_themes);
@@ -107,17 +116,43 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
         _themes.isEmpty ? 'Skip for now' : 'Continue',
         () => setState(() => _step++),
       ),
-      _ => (
-        _Ready(
+      5 => (
+        _PaceStep(
+          pace: _pace,
+          onChanged: (pace) => setState(() => _pace = pace),
+        ),
+        'Continue',
+        _pace == null ? null : () => setState(() => _step++),
+      ),
+      6 => (
+        _Plan(
           level: _level,
           goal: _goal,
           language: cleanFirstLanguage(_language),
+          pace: _pace,
           themes: _themes,
         ),
-        "Let's go",
-        _saving ? null : _finish,
+        'Continue',
+        () => setState(() => _step++),
+      ),
+      _ => (
+        const _FreeOrPlus(),
+        'Try Leera Plus free for 7 days',
+        _saving ? null : () => context.pushNamed(plusRouteName),
       ),
     };
+    // On the last step, the free plan is the second way on.
+    final isPlus = switch (ref.watch(quotaProvider).value?.plan) {
+      Plan.plus || Plan.dev => true,
+      _ => false,
+    };
+    final Widget? secondary = _step == _steps - 1
+        ? TextButton(
+            key: const ValueKey('welcome-free'),
+            onPressed: _saving ? null : _finish,
+            child: Text(isPlus ? 'Continue' : 'Continue with the free plan'),
+          )
+        : null;
 
     return PopScope(
       canPop: _step == 0,
@@ -169,9 +204,12 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                     BottomActionButton(
                       buttonKey: const ValueKey('welcome-next'),
                       label: action,
-                      icon: Icons.arrow_forward_rounded,
+                      icon: _step == _steps - 1
+                          ? Icons.auto_awesome_rounded
+                          : Icons.arrow_forward_rounded,
                       onTap: onAction,
                     ),
+                    ?secondary,
                   ],
                 ),
               ),
@@ -455,17 +493,43 @@ class _ThemesStep extends ConsumerWidget {
   }
 }
 
-class _Ready extends StatelessWidget {
-  const _Ready({
+class _PaceStep extends StatelessWidget {
+  const _PaceStep({required this.pace, required this.onChanged});
+
+  final StudyPace? pace;
+  final ValueChanged<StudyPace> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const _Title(
+        'How much time can you give?',
+        detail:
+            'Be honest: a little every day beats a lot once a week. You can '
+            'change it later.',
+      ),
+      const SizedBox(height: AppSpacing.xl),
+      PaceChoices(pace: pace, onChanged: onChanged),
+    ],
+  );
+}
+
+/// The plan the answers make: a week to keep, and what is known of the
+/// person.
+class _Plan extends StatelessWidget {
+  const _Plan({
     required this.level,
     required this.goal,
     required this.language,
+    required this.pace,
     required this.themes,
   });
 
   final String? level;
   final LearnerGoal? goal;
   final String? language;
+  final StudyPace? pace;
   final Set<String> themes;
 
   @override
@@ -473,12 +537,53 @@ class _Ready extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       const _Title(
-        "You're all set",
+        'Your plan',
         detail:
-            'One topic a day is enough. On the free plan, Claude corrects '
-            'one presentation a week; Leera Plus gives you three a day.',
+            'A rhythm to keep each week. Today shows where you stand, and '
+            'Claude fits each correction to you.',
       ),
       const SizedBox(height: AppSpacing.xl),
+      if (pace case final pace?)
+        Container(
+          key: const ValueKey('welcome-plan'),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.ink,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'EACH WEEK',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.4,
+                  color: Color(0xFFBFE9EF),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _PlanFigure(
+                figure: '${pace.sessions}',
+                text: pace.sessions == 7
+                    ? 'sessions: a topic a day'
+                    : 'sessions: research, explain, get corrected',
+              ),
+              const SizedBox(height: AppSpacing.sm + 2),
+              _PlanFigure(
+                figure: '${pace.reviews}',
+                text: 'review days for your words',
+              ),
+              const SizedBox(height: AppSpacing.sm + 2),
+              _PlanFigure(
+                figure: '${pace.minutesADay}′',
+                text: 'a day, more or less',
+              ),
+            ],
+          ),
+        ),
+      const SizedBox(height: AppSpacing.lg),
       Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
@@ -510,6 +615,163 @@ class _Ready extends StatelessWidget {
                   ? 'Every theme, for now'
                   : 'Your themes: ${(themes.toList()..sort()).join(', ')}',
             ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+class _PlanFigure extends StatelessWidget {
+  const _PlanFigure({required this.figure, required this.text});
+
+  final String figure;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.baseline,
+    textBaseline: TextBaseline.alphabetic,
+    children: [
+      SizedBox(
+        width: 48,
+        child: Text(
+          figure,
+          style: const TextStyle(
+            fontFamily: displayFontFamily,
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: AppColors.highlight,
+          ),
+        ),
+      ),
+      Expanded(
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppColors.background,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+/// What the free plan gives, and what Leera Plus adds.
+class _FreeOrPlus extends StatelessWidget {
+  const _FreeOrPlus();
+
+  static const _rows = [
+    ('Topics, research and Explore', 'yes', 'yes'),
+    ('Corrections by Claude', '1 a week', '3 a day'),
+    ('Journal and progress', 'yes', 'yes'),
+    ('Vocabulary review', 'no', 'yes'),
+    ('Daily topic from your themes', 'no', 'yes'),
+  ];
+
+  Widget _cell(String value, {required bool plus}) => switch (value) {
+    'yes' => Icon(
+      Icons.check_circle_rounded,
+      size: 20,
+      color: plus ? AppColors.primary : AppColors.textMuted,
+      semanticLabel: 'Included',
+    ),
+    'no' => const Icon(
+      Icons.remove_rounded,
+      size: 20,
+      color: AppColors.surfaceMuted,
+      semanticLabel: 'Not included',
+    ),
+    _ => Text(
+      value,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w800,
+        color: plus ? AppColors.primary : AppColors.textMuted,
+      ),
+    ),
+  };
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const _Title(
+        'Free, or Plus?',
+        detail:
+            'Start free and upgrade when you want. Plus is free for 7 days, '
+            'then billed by the App Store; cancel anytime in Settings.',
+      ),
+      const SizedBox(height: AppSpacing.xl),
+      Container(
+        key: const ValueKey('welcome-compare'),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          children: [
+            const Row(
+              children: [
+                Expanded(child: SizedBox.shrink()),
+                SizedBox(
+                  width: 64,
+                  child: Text(
+                    'Free',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 64,
+                  child: Text(
+                    'Plus',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            for (final (feature, free, plus) in _rows) ...[
+              const Divider(height: 1, color: AppColors.surfaceMuted),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        feature,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 64,
+                      child: Center(child: _cell(free, plus: false)),
+                    ),
+                    SizedBox(
+                      width: 64,
+                      child: Center(child: _cell(plus, plus: true)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

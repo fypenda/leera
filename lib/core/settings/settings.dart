@@ -45,6 +45,12 @@ abstract final class SettingKeys {
 
   /// Their first language, in English ("French").
   static const firstLanguage = 'first_language';
+
+  /// How much time they give: the name of a `StudyPace`.
+  static const studyPace = 'study_pace';
+
+  /// The days a review round was finished, `YYYY-MM-DD`, comma separated.
+  static const reviewDays = 'review_days';
 }
 
 /// Whether the welcome has been gone through on this device.
@@ -71,4 +77,14 @@ final goalSettingProvider = StreamProvider<String?>(
 final firstLanguageProvider = StreamProvider<String?>(
   (ref) =>
       ref.watch(settingsRepositoryProvider).watch(SettingKeys.firstLanguage),
+);
+
+/// How much time the person gives, as stored (the name of a `StudyPace`).
+final studyPaceSettingProvider = StreamProvider<String?>(
+  (ref) => ref.watch(settingsRepositoryProvider).watch(SettingKeys.studyPace),
+);
+
+/// The days a review round was finished, as stored.
+final reviewDaysSettingProvider = StreamProvider<String?>(
+  (ref) => ref.watch(settingsRepositoryProvider).watch(SettingKeys.reviewDays),
 );

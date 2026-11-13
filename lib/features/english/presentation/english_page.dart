@@ -22,6 +22,7 @@ import '../domain/practice_session.dart';
 import '../domain/practice_stats.dart';
 import '../domain/session_feedback.dart';
 import '../domain/session_recording.dart';
+import '../domain/study_pace.dart';
 import 'daily_challenge_card.dart';
 import 'session_navigation.dart';
 
@@ -67,7 +68,18 @@ class EnglishPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.xl - 4),
                   switch (stats) {
-                    AsyncData(value: final week) => _WeekCard(stats: week),
+                    AsyncData(value: final week) => _WeekCard(
+                      stats: week,
+                      pace: StudyPace.fromName(
+                        ref.watch(studyPaceSettingProvider).value,
+                      ),
+                      reviewDays: reviewDaysThisWeek(
+                        parseReviewDays(
+                          ref.watch(reviewDaysSettingProvider).value,
+                        ),
+                        today,
+                      ),
+                    ),
                     AsyncError() => LoadFailure(
                       message: 'Your sessions could not be loaded.',
                       onRetry: () => ref.invalidate(practiceSessionsProvider),
@@ -207,9 +219,19 @@ class _Header extends StatelessWidget {
 
 /// The days of this week, practised or not, and the streak.
 class _WeekCard extends StatelessWidget {
-  const _WeekCard({required this.stats});
+  const _WeekCard({
+    required this.stats,
+    required this.pace,
+    required this.reviewDays,
+  });
 
   final PracticeStats stats;
+
+  /// The weekly plan, if the person chose a pace.
+  final StudyPace? pace;
+
+  /// Days this week with a review round finished.
+  final int reviewDays;
 
   static const _letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -258,6 +280,86 @@ class _WeekCard extends StatelessWidget {
                   isToday: day == stats.today,
                 ),
             ],
+          ),
+          if (pace case final pace?) ...[
+            const SizedBox(height: AppSpacing.md + 2),
+            const Divider(height: 1, color: AppColors.surfaceMuted),
+            const SizedBox(height: AppSpacing.md),
+            _PlanLine(
+              key: const ValueKey('plan-sessions'),
+              label: 'Sessions',
+              done: stats.completedThisWeek,
+              target: pace.sessions,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _PlanLine(
+              key: const ValueKey('plan-reviews'),
+              label: 'Review days',
+              done: reviewDays,
+              target: pace.reviews,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// One goal of the weekly plan: how far along, as a bar and "2 / 5".
+class _PlanLine extends StatelessWidget {
+  const _PlanLine({
+    super.key,
+    required this.label,
+    required this.done,
+    required this.target,
+  });
+
+  final String label;
+  final int done;
+  final int target;
+
+  @override
+  Widget build(BuildContext context) {
+    final reached = done >= target;
+    return Semantics(
+      label: '$label: $done of $target this week',
+      excludeSemantics: true,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 92,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.text,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: target == 0 ? 1 : (done / target).clamp(0.0, 1.0),
+                minHeight: 6,
+                color: AppColors.highlight,
+                backgroundColor: AppColors.surfaceMuted,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          SizedBox(
+            width: 52,
+            child: Text(
+              reached ? '$done / $target ✓' : '$done / $target',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: reached ? AppColors.primary : AppColors.textMuted,
+              ),
+            ),
           ),
         ],
       ),

@@ -11,6 +11,7 @@ import '../../core/settings/settings.dart';
 import '../../core/time/date_formatting.dart';
 import '../../features/english/application/english_feedback.dart';
 import '../../features/english/domain/learner_profile.dart';
+import '../../features/english/domain/study_pace.dart';
 import '../../features/english/english_routes.dart';
 import '../../features/english/presentation/session_chrome.dart';
 import '../theme/app_colors.dart';
@@ -440,8 +441,8 @@ class _ActionRow extends StatelessWidget {
 }
 
 /// What corrections are tuned to: the level given in the welcome (until a
-/// correction estimates one), the goal and the first language. Each can be
-/// changed here.
+/// correction estimates one), the goal and the first language; and the
+/// weekly plan. Each can be changed here.
 class _LearningCard extends ConsumerWidget {
   const _LearningCard();
 
@@ -478,6 +479,7 @@ class _LearningCard extends ConsumerWidget {
     final given = _orNull(ref.watch(selfAssessedLevelProvider).value);
     final goal = LearnerGoal.fromName(ref.watch(goalSettingProvider).value);
     final language = _orNull(ref.watch(firstLanguageProvider).value);
+    final pace = StudyPace.fromName(ref.watch(studyPaceSettingProvider).value);
 
     return _Card(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -520,6 +522,26 @@ class _LearningCard extends ConsumerWidget {
               choices: (value, onChanged) => GoalChoices(
                 goal: LearnerGoal.fromName(value),
                 onChanged: (goal) => onChanged(goal.name),
+              ),
+            ),
+          ),
+          const _RowDivider(),
+          _ActionRow(
+            key: const ValueKey('edit-pace'),
+            icon: Icons.schedule_rounded,
+            label: pace == null
+                ? 'Your weekly plan'
+                : '${pace.label}: ${pace.sessions} sessions a week',
+            color: AppColors.ink,
+            onTap: () => _edit(
+              context,
+              ref,
+              title: 'How much time can you give?',
+              key: SettingKeys.studyPace,
+              current: pace?.name,
+              choices: (value, onChanged) => PaceChoices(
+                pace: StudyPace.fromName(value),
+                onChanged: (pace) => onChanged(pace.name),
               ),
             ),
           ),
