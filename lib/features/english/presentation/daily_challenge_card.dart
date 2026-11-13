@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../core/motion/motion.dart';
 
 /// The bright invitation to today's English session: a random topic to
 /// research, then present.
-class DailyChallengeCard extends StatelessWidget {
+///
+/// Rolling a new topic rolls the die first, a second, with a tap of the
+/// phone at each end; continuing a session goes straight on.
+class DailyChallengeCard extends StatefulWidget {
   const DailyChallengeCard({
     super.key,
     required this.onStart,
@@ -19,8 +23,31 @@ class DailyChallengeCard extends StatelessWidget {
   final bool continuing;
 
   @override
+  State<DailyChallengeCard> createState() => _DailyChallengeCardState();
+}
+
+class _DailyChallengeCardState extends State<DailyChallengeCard> {
+  var _rolling = false;
+
+  Future<void> _start() async {
+    if (_rolling) return;
+    if (widget.continuing || !motionOn(context)) {
+      widget.onStart();
+      return;
+    }
+    Haptics.light();
+    setState(() => _rolling = true);
+    await Future<void>.delayed(RollingDie.rollDuration);
+    if (!mounted) return;
+    Haptics.success();
+    setState(() => _rolling = false);
+    widget.onStart();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final continuing = widget.continuing;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -51,13 +78,8 @@ class DailyChallengeCard extends StatelessWidget {
               ),
               Positioned(
                 right: roomy ? 40 : 22,
-                top: roomy ? 36 : 20,
-                child: ExcludeSemantics(
-                  child: Text(
-                    '🎲',
-                    style: TextStyle(fontSize: roomy ? 76 : 46, height: 1),
-                  ),
-                ),
+                top: roomy ? 36 : 22,
+                child: RollingDie(rolling: _rolling, size: roomy ? 76 : 52),
               ),
               Padding(
                 padding: EdgeInsets.all(roomy ? 32 : AppSpacing.xl),
@@ -100,13 +122,17 @@ class DailyChallengeCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.lg + 2),
                     FilledButton(
-                      onPressed: onStart,
+                      onPressed: _start,
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.surface,
                         foregroundColor: AppColors.ink,
                       ),
                       child: Text(
-                        continuing ? 'Continue my session →' : 'Roll my topic →',
+                        continuing
+                            ? 'Continue my session →'
+                            : _rolling
+                            ? 'Rolling…'
+                            : 'Roll my topic →',
                       ),
                     ),
                   ],

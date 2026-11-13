@@ -2,13 +2,36 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_colors.dart';
 
-/// How a theme looks: its icon and its colours.
-typedef ThemeStyle = ({IconData icon, Color background, Color foreground});
+/// How a theme looks: its icon, its colours for small things, and the
+/// colour of a topic card in it.
+typedef ThemeStyle = ({
+  IconData icon,
+  Color background,
+  Color foreground,
+  Color card,
+});
 
 const _palettes = [
-  (background: AppColors.primarySoft, foreground: AppColors.primary),
-  (background: AppColors.coralSoft, foreground: AppColors.coralStrong),
-  (background: AppColors.accentSoft, foreground: AppColors.accentStrong),
+  (
+    background: AppColors.primarySoft,
+    foreground: AppColors.primary,
+    card: AppColors.highlight,
+  ),
+  (
+    background: AppColors.coralSoft,
+    foreground: AppColors.coralStrong,
+    card: AppColors.coralSoft,
+  ),
+  (
+    background: AppColors.accentSoft,
+    foreground: AppColors.accentStrong,
+    card: AppColors.accent,
+  ),
+  (
+    background: AppColors.primarySoft,
+    foreground: AppColors.primary,
+    card: AppColors.primarySoft,
+  ),
 ];
 
 const _icons = {
@@ -40,5 +63,6 @@ ThemeStyle themeStyle(String theme) {
     icon: _icons[theme] ?? Icons.label_outline_rounded,
     background: palette.background,
     foreground: palette.foreground,
+    card: palette.card,
   );
 }

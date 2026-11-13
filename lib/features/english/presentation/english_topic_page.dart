@@ -8,6 +8,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/common/widgets/edge_swipe_back.dart';
+import '../../../core/motion/motion.dart';
 import '../../../core/time/clock.dart';
 import '../application/english_sessions.dart';
 import '../data/practice_session_repository_provider.dart';
@@ -18,6 +19,7 @@ import '../domain/restitution_format.dart';
 import '../english_routes.dart';
 import 'session_chrome.dart';
 import 'session_navigation.dart';
+import 'theme_style.dart';
 
 /// Step 1 of a session: the topic and format drawn at random, the research
 /// timer, and notes taken without AI, saved as they are written.
@@ -114,7 +116,10 @@ class _ResearchState extends ConsumerState<_Research> {
   }
 
   Future<void> _anotherTopic() => _run(
-    () => ref.read(practiceSessionActionsProvider).reroll(widget.session),
+    () {
+      Haptics.light();
+      return ref.read(practiceSessionActionsProvider).reroll(widget.session);
+    },
     'Another topic could not be drawn.',
   );
 
@@ -183,13 +188,21 @@ class _ResearchState extends ConsumerState<_Research> {
                             label: 'Step 1 · Research',
                           ),
                           const SizedBox(height: AppSpacing.lg + 2),
-                          _TopicCard(
-                            title: topic.title,
-                            prompt: topic.prompt,
-                            categories: topic.categories,
+                          // Flips in on arrival, and again for another topic.
+                          FlipIn(
+                            key: ValueKey('flip-${topic.id}'),
+                            child: _TopicCard(
+                              title: topic.title,
+                              prompt: topic.prompt,
+                              categories: topic.categories,
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.lg + 2),
-                          _FormatRow(format: session.format),
+                          RiseIn(
+                            key: ValueKey('format-${topic.id}'),
+                            delay: const Duration(milliseconds: 450),
+                            child: _FormatRow(format: session.format),
+                          ),
                           const SizedBox(height: AppSpacing.lg + 2),
                           _NotesCard(
                             controller: _notes,
@@ -240,22 +253,26 @@ class _TopicCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The colour and the faint icon of its first theme.
+    final style = themeStyle(
+      categories.isEmpty ? '' : categoryName(categories.first),
+    );
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.accent,
+        color: style.card,
         borderRadius: BorderRadius.circular(28),
       ),
       child: Stack(
         children: [
-          const Positioned(
+          Positioned(
             right: -44,
             bottom: -44,
             child: ExcludeSemantics(
               child: Icon(
-                Icons.public_rounded,
+                style.icon,
                 size: 140,
-                color: Color(0x1F24323A),
+                color: const Color(0x1F24323A),
               ),
             ),
           ),

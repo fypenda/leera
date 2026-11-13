@@ -47,6 +47,11 @@ Future<ProviderContainer> pumpEnglishApp(
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   addTearDown(tester.view.reset);
+  // As with iOS's Reduce Motion: no animation waits, nothing loops, so
+  // settling the app always ends.
+  tester.platformDispatcher.accessibilityFeaturesTestValue =
+      const FakeAccessibilityFeatures(disableAnimations: true);
+  addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
   // The widget tree owns the providers, as in the real app, so everything
   // (database, timers) is released when the app leaves the screen.
