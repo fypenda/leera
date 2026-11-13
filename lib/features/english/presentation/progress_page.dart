@@ -5,6 +5,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/common/widgets/load_failure.dart';
+import '../../../core/motion/motion.dart';
 import '../../../core/settings/settings.dart';
 import '../../../core/time/date_formatting.dart';
 import '../../../core/time/today.dart';
@@ -209,12 +210,16 @@ class _LevelCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  CircularProgressIndicator(
+                  GrowTo(
                     value: progress,
-                    strokeWidth: 10,
-                    strokeCap: StrokeCap.round,
-                    color: AppColors.highlight,
-                    backgroundColor: const Color(0xFF3A4A53),
+                    duration: const Duration(milliseconds: 1100),
+                    builder: (value) => CircularProgressIndicator(
+                      value: value,
+                      strokeWidth: 10,
+                      strokeCap: StrokeCap.round,
+                      color: AppColors.highlight,
+                      backgroundColor: const Color(0xFF3A4A53),
+                    ),
                   ),
                   Center(
                     child: Text(
@@ -392,10 +397,12 @@ class _Bar extends StatelessWidget {
             height: area,
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: Container(
-                height: average == null
+              child: GrowTo(
+                value: average == null
                     ? 4
                     : (average / 10 * area).clamp(4.0, area),
+                builder: (height) => Container(
+                height: height,
                 decoration: BoxDecoration(
                   color: average == null
                       ? AppColors.surfaceMuted.withValues(alpha: 0.5)
@@ -404,6 +411,7 @@ class _Bar extends StatelessWidget {
                       : AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(8),
                 ),
+              ),
               ),
             ),
           ),
@@ -525,7 +533,18 @@ class _Total extends StatelessWidget {
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: Text(
+          child: switch (int.tryParse(value)) {
+            final count? => CountUp(
+              value: count,
+              style: const TextStyle(
+                fontFamily: displayFontFamily,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                height: 1,
+                color: AppColors.ink,
+              ),
+            ),
+            null => Text(
             value,
             style: const TextStyle(
               fontFamily: displayFontFamily,
@@ -535,6 +554,7 @@ class _Total extends StatelessWidget {
               color: AppColors.ink,
             ),
           ),
+          },
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(

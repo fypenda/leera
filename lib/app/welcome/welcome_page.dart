@@ -681,6 +681,13 @@ class _PlanFigure extends StatelessWidget {
   final String figure;
   final String text;
 
+  static const _style = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w800,
+    color: AppColors.highlight,
+  );
+
   @override
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -688,15 +695,11 @@ class _PlanFigure extends StatelessWidget {
     children: [
       SizedBox(
         width: 48,
-        child: Text(
-          figure,
-          style: const TextStyle(
-            fontFamily: displayFontFamily,
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            color: AppColors.highlight,
-          ),
-        ),
+        // A whole number counts up; "20′" stays as it is.
+        child: switch (int.tryParse(figure)) {
+          final count? => CountUp(value: count, style: _style),
+          null => Text(figure, style: _style),
+        },
       ),
       Expanded(
         child: Text(

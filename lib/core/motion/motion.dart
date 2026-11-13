@@ -598,3 +598,29 @@ class _RollingDieState extends State<RollingDie> with TickerProviderStateMixin {
     );
   }
 }
+
+/// Builds with [value], grown from 0 when it first appears and eased to
+/// any new value after: a ring, a bar, a height.
+class GrowTo extends StatelessWidget {
+  const GrowTo({
+    super.key,
+    required this.value,
+    required this.builder,
+    this.duration = const Duration(milliseconds: 900),
+  });
+
+  final double value;
+  final Widget Function(double value) builder;
+  final Duration duration;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!motionOn(context)) return builder(value);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: value),
+      duration: duration,
+      curve: Curves.easeOutCubic,
+      builder: (context, shown, _) => builder(shown),
+    );
+  }
+}

@@ -9,6 +9,7 @@ import '../../../core/auth/auth_actions.dart';
 import '../../../core/auth/quota.dart';
 import '../../../core/auth/session.dart';
 import '../../../core/common/widgets/load_failure.dart';
+import '../../../core/motion/motion.dart';
 import '../../../core/settings/settings.dart';
 import '../../../core/time/calendar_date.dart';
 import '../../../core/time/clock.dart';
@@ -340,11 +341,14 @@ class _PlanLine extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(3),
-              child: LinearProgressIndicator(
+              child: GrowTo(
                 value: target == 0 ? 1 : (done / target).clamp(0.0, 1.0),
-                minHeight: 6,
-                color: AppColors.highlight,
-                backgroundColor: AppColors.surfaceMuted,
+                builder: (value) => LinearProgressIndicator(
+                  value: value,
+                  minHeight: 6,
+                  color: AppColors.highlight,
+                  backgroundColor: AppColors.surfaceMuted,
+                ),
               ),
             ),
           ),
@@ -534,11 +538,14 @@ class _Tile extends StatelessWidget {
           const SizedBox(height: AppSpacing.md - 2),
           ClipRRect(
             borderRadius: BorderRadius.circular(3),
-            child: LinearProgressIndicator(
+            child: GrowTo(
               value: progress,
-              minHeight: 6,
-              color: barColor,
-              backgroundColor: AppColors.surfaceMuted,
+              builder: (value) => LinearProgressIndicator(
+                value: value,
+                minHeight: 6,
+                color: barColor,
+                backgroundColor: AppColors.surfaceMuted,
+              ),
             ),
           ),
         ],
