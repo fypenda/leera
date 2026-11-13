@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../core/motion/motion.dart';
 import '../../../core/app_name.dart';
 import '../../../core/audio/audio_playback.dart';
 import '../../../core/audio/voice_recorder.dart';
@@ -86,6 +87,7 @@ class _VoiceRecorderPanelState extends ConsumerState<VoiceRecorderPanel> {
       _levels.clear();
       _elapsed = Duration.zero;
       _progress = _recorder.progress.listen(_onProgress);
+      Haptics.light();
       _setStage(_Stage.recording);
     } on Object catch (error) {
       debugPrint('Recording could not start: $error');
@@ -117,6 +119,7 @@ class _VoiceRecorderPanelState extends ConsumerState<VoiceRecorderPanel> {
     final target = _target;
     if (target == null || _stage == _Stage.saving) return;
     _setStage(_Stage.saving);
+    Haptics.success();
     await _progress?.cancel();
     _progress = null;
     try {
@@ -278,7 +281,7 @@ class _Recording extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                paused ? '⏸️ Paused' : '🔴 Recording',
+                paused ? 'Paused' : 'Listening…',
                 key: const ValueKey('recording-status'),
                 style: textTheme.titleMedium,
               ),
@@ -311,33 +314,28 @@ class _Recording extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.xl),
-        ExcludeSemantics(
-          child: SizedBox(
-            height: 120,
-            child: Row(
-              children: [
-                for (
-                  var index = 0;
-                  index < _VoiceRecorderPanelState._bars;
-                  index++
-                )
-                  Expanded(
-                    child: Center(
-                      child: FractionallySizedBox(
-                        heightFactor: math.max(0.06, _levelAt(index)),
-                        child: Container(
-                          width: 6,
-                          decoration: BoxDecoration(
-                            color: _levelAt(index) > 0
-                                ? AppColors.coral
-                                : AppColors.surfaceMuted,
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+        // The logo's bars, following the voice: the three latest levels.
+        Center(
+          child: Container(
+            key: const ValueKey('recording-bars'),
+            width: 190,
+            height: 140,
+            padding: const EdgeInsets.only(bottom: 28),
+            alignment: Alignment.bottomCenter,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(34),
+            ),
+            child: LogoBars(
+              height: 84,
+              barWidth: 26,
+              levels: paused
+                  ? const [0, 0, 0]
+                  : [
+                      _levelAt(_VoiceRecorderPanelState._bars - 3),
+                      _levelAt(_VoiceRecorderPanelState._bars - 1),
+                      _levelAt(_VoiceRecorderPanelState._bars - 2),
+                    ],
             ),
           ),
         ),
@@ -357,7 +355,7 @@ class _Recording extends StatelessWidget {
         if (over) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
-            '⏱️ Time is up: wrap up when you are ready.',
+            'Time is up: wrap up when you are ready.',
             key: const ValueKey('recording-over-time'),
             textAlign: TextAlign.center,
             style: textTheme.bodySmall,
@@ -387,7 +385,7 @@ class _Recording extends StatelessWidget {
             FilledButton(
               key: const ValueKey('finish-recording'),
               onPressed: saving ? null : onFinish,
-              child: const Text('✅ Done'),
+              child: const Text('Done'),
             ),
           ],
         ),

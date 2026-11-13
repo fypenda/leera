@@ -101,7 +101,7 @@ void main() {
       await _tap(tester, _key('start-recording'));
       expect(recorder.permissionRequests, 1);
       expect(recorder.started.single, startsWith('/recordings/${session.id}-'));
-      expect(find.text('🔴 Recording'), findsOneWidget);
+      expect(find.text('Listening…'), findsOneWidget);
       expect(_canSend(tester), isFalse);
 
       await _speak(tester, recorder, const Duration(seconds: 50));
@@ -109,7 +109,7 @@ void main() {
 
       await _tap(tester, _key('pause-recording'));
       expect(recorder.paused, isTrue);
-      expect(find.text('⏸️ Paused'), findsOneWidget);
+      expect(find.text('Paused'), findsOneWidget);
       await _tap(tester, _key('resume-recording'));
       expect(recorder.paused, isFalse);
 

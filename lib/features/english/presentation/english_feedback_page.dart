@@ -11,6 +11,7 @@ import '../../../core/auth/session.dart';
 import '../../../core/audio/transcriber.dart';
 import '../../../core/common/widgets/edge_swipe_back.dart';
 import '../../../core/common/widgets/load_failure.dart';
+import '../../../core/motion/motion.dart';
 import '../application/english_feedback.dart';
 import '../application/english_recordings.dart';
 import '../application/english_transcriptions.dart';
@@ -209,7 +210,7 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
           text:
               'It is turned into text on this device whenever it can be, '
               'then corrected like a written one.',
-          action: LinearProgressIndicator(),
+          action: _ThinkingBars(),
         );
       }(),
       _ when session.presentation == null && transcript!.trim().isEmpty =>
@@ -264,7 +265,7 @@ class _FeedbackForSessionState extends ConsumerState<_FeedbackForSession> {
           title: 'Claude is reading your presentation…',
           text: 'This takes a few seconds. Stay here, or come back later: '
               'your presentation is saved.',
-          action: LinearProgressIndicator(),
+          action: _ThinkingBars(),
         );
       }(),
       _ => const SizedBox.shrink(),
@@ -400,6 +401,27 @@ class _SectionTitle extends StatelessWidget {
 }
 
 /// A short message card, with an optional action under it.
+/// Leera's loading sign: the logo's bars bobbing in their bubble.
+class _ThinkingBars extends StatelessWidget {
+  const _ThinkingBars();
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Container(
+      key: const ValueKey('thinking-bars'),
+      width: 150,
+      height: 110,
+      padding: const EdgeInsets.only(bottom: 24),
+      alignment: Alignment.bottomCenter,
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: const LogoBars(height: 62, barWidth: 20),
+    ),
+  );
+}
+
 class _Message extends StatelessWidget {
   const _Message({
     super.key,
